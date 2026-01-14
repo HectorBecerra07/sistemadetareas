@@ -1,0 +1,4 @@
+/* styles are now handled by MUI's CssBaseline and ThemeProvider */
+body {
+  margin: 0;
+}
