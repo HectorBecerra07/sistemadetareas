@@ -12,6 +12,8 @@ import {
   Avatar,
   Typography,
   Button,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import TaskIcon from '@mui/icons-material/Task';
@@ -22,12 +24,12 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
 import { useUser } from '../context/UserContext';
 
-const drawerWidth = 240;
-
-const Sidebar = ({ variant, onClose, open }) => {
+const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
   const { currentUser, logout } = useUser();
   const location = useLocation();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const isAdmin = currentUser?.role === 'admin';
 
@@ -61,28 +63,28 @@ const Sidebar = ({ variant, onClose, open }) => {
     navigate('/login');
   };
 
-  return (
-    <Drawer
-      variant={variant}
-      anchor="left"
-      open={open}
-      onClose={onClose}
-    >
+  const drawerContent = (
+    <div>
       <Box
         sx={{
           p: 2,
           display: 'flex',
           alignItems: 'center',
           flexDirection: 'column',
-          background: 'linear-gradient(135deg, #42a5f5, #ab47bc)',
+          background: (theme) => `linear-gradient(145deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
           color: 'white',
         }}
       >
         <Typography
           variant="subtitle2"
-          sx={{ textTransform: 'uppercase', letterSpacing: 1, mb: 1 }}
+          sx={{
+            textTransform: 'uppercase',
+            letterSpacing: 1,
+            mb: 1,
+            fontWeight: 'bold',
+          }}
         >
-          Sistema de tareas
+          Work Tareas
         </Typography>
 
         {currentUser && (
@@ -92,8 +94,9 @@ const Sidebar = ({ variant, onClose, open }) => {
                 width: 64,
                 height: 64,
                 mb: 1,
-                bgcolor: 'rgba(255,255,255,0.2)',
+                bgcolor: 'rgba(255,255,255,0.25)',
                 fontSize: 28,
+                border: '2px solid white',
               }}
             >
               {currentUser.name[0]}
@@ -106,7 +109,16 @@ const Sidebar = ({ variant, onClose, open }) => {
             </Typography>
 
             {isAdmin && (
-              <Typography variant="caption" sx={{ mt: 0.5, opacity: 0.9 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  mt: 0.5,
+                  fontWeight: 'bold',
+                  bgcolor: 'rgba(255, 255, 255, 0.2)',
+                  px: 1,
+                  borderRadius: 1,
+                }}
+              >
                 Administrador
               </Typography>
             )}
@@ -117,7 +129,11 @@ const Sidebar = ({ variant, onClose, open }) => {
               sx={{
                 mt: 2,
                 color: 'white',
-                borderColor: 'rgba(255,255,255,0.6)',
+                borderColor: 'rgba(255,255,255,0.7)',
+                '&:hover': {
+                  borderColor: 'white',
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                },
               }}
               onClick={handleLogout}
             >
@@ -136,20 +152,26 @@ const Sidebar = ({ variant, onClose, open }) => {
               component={RouterLink}
               to={item.path}
               selected={isActive(item.path)}
+              onClick={isMobile ? handleDrawerToggle : undefined}
               sx={{
                 mx: 1,
                 mb: 0.5,
                 borderRadius: 2,
                 '&.Mui-selected': {
-                  bgcolor: 'rgba(66, 165, 245, 0.15)',
-                  '&:hover': { bgcolor: 'rgba(66, 165, 245, 0.25)' },
+                  backgroundColor: 'primary.main',
+                  color: 'primary.contrastText',
+                  '&:hover': {
+                    backgroundColor: 'primary.dark',
+                  },
+                  '& .MuiListItemIcon-root': {
+                    color: 'primary.contrastText',
+                  },
                 },
               }}
             >
               <ListItemIcon
                 sx={{
                   minWidth: 40,
-                  color: isActive(item.path) ? 'primary.main' : 'text.secondary',
                 }}
               >
                 {item.icon}
@@ -158,15 +180,50 @@ const Sidebar = ({ variant, onClose, open }) => {
                 primary={item.text}
                 primaryTypographyProps={{
                   fontSize: 14,
-                  fontWeight: isActive(item.path) ? 600 : 400,
+                  fontWeight: isActive(item.path) ? 'bold' : 'normal',
                 }}
               />
             </ListItemButton>
           </ListItem>
         ))}
       </List>
-    </Drawer>
+    </div>
+  );
+
+  return (
+    <Box
+      component="nav"
+      sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
+    >
+      {/* Mobile Drawer */}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={handleDrawerToggle}
+        ModalProps={{
+          keepMounted: true, // Better open performance on mobile.
+        }}
+        sx={{
+          display: { xs: 'block', md: 'none' },
+          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+        }}
+      >
+        {drawerContent}
+      </Drawer>
+      {/* Desktop Drawer */}
+      <Drawer
+        variant="permanent"
+        sx={{
+          display: { xs: 'none', md: 'block' },
+          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+        }}
+        open
+      >
+        {drawerContent}
+      </Drawer>
+    </Box>
   );
 };
 
 export default Sidebar;
+

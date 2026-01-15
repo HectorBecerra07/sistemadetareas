@@ -28,6 +28,7 @@ import MenuItem from '@mui/material/MenuItem';
 import TodayIcon from '@mui/icons-material/Today';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import Grid from '@mui/material/Grid';
 
 moment.locale('es');
 const localizer = momentLocalizer(moment);
@@ -127,88 +128,48 @@ const GeneralCalendarPage = () => {
   };
 
   const CustomToolbar = (toolbar) => {
-    const goToBack = () => toolbar.onNavigate('PREV');
-    const goToNext = () => toolbar.onNavigate('NEXT');
-    const goToToday = () => toolbar.onNavigate('TODAY');
+    const { date, onView, onNavigate } = toolbar;
 
-    const handleViewChange = (newView) => {
-      setView(newView);
-      toolbar.onView(newView);
-    };
-
-    const label = moment(toolbar.date).format('MMMM YYYY');
+    const years = Array.from({ length: 11 }, (_, i) => moment().year() - 5 + i);
+    const months = moment.months();
 
     return (
-      <Box
-        sx={{
-          mb: 2,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 2,
-          flexWrap: 'wrap',
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <IconButton onClick={goToBack}>
-            <ChevronLeftIcon />
-          </IconButton>
-          <IconButton onClick={goToToday}>
-            <TodayIcon />
-          </IconButton>
-          <IconButton onClick={goToNext}>
-            <ChevronRightIcon />
-          </IconButton>
-          <Typography variant="h6" sx={{ ml: 1, textTransform: 'capitalize' }}>
-            {label}
-          </Typography>
+        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                <Button variant="outlined" size="small" onClick={() => onNavigate('TODAY')}>Hoy</Button>
+                <IconButton onClick={() => onNavigate('PREV')}><ChevronLeftIcon /></IconButton>
+                <IconButton onClick={() => onNavigate('NEXT')}><ChevronRightIcon /></IconButton>
+                
+                <FormControl size="small" variant="outlined">
+                    <Select value={moment(date).month()} onChange={(e) => onNavigate(moment(date).month(e.target.value).toDate())}>
+                        {months.map((month, index) => <MenuItem key={index} value={index}>{month}</MenuItem>)}
+                    </Select>
+                </FormControl>
+                <FormControl size="small" variant="outlined">
+                    <Select value={moment(date).year()} onChange={(e) => onNavigate(moment(date).year(e.target.value).toDate())}>
+                        {years.map(year => <MenuItem key={year} value={year}>{year}</MenuItem>)}
+                    </Select>
+                </FormControl>
+            </Box>
+            <ButtonGroup variant="outlined" size="small">
+                 <Button variant={view === 'month' ? 'contained' : 'outlined'} onClick={() => onView('month')}>Mes</Button>
+                 <Button variant={view === 'week' ? 'contained' : 'outlined'} onClick={() => onView('week')}>Semana</Button>
+                 <Button variant={view === 'day' ? 'contained' : 'outlined'} onClick={() => onView('day')}>Día</Button>
+            </ButtonGroup>
         </Box>
-
-        <ButtonGroup variant="outlined" size="small">
-          <Button
-            variant={view === 'month' ? 'contained' : 'outlined'}
-            onClick={() => handleViewChange('month')}
-          >
-            Mes
-          </Button>
-          <Button
-            variant={view === 'week' ? 'contained' : 'outlined'}
-            onClick={() => handleViewChange('week')}
-          >
-            Semana
-          </Button>
-          <Button
-            variant={view === 'day' ? 'contained' : 'outlined'}
-            onClick={() => handleViewChange('day')}
-          >
-            Día
-          </Button>
-          <Button
-            variant={view === 'agenda' ? 'contained' : 'outlined'}
-            onClick={() => handleViewChange('agenda')}
-          >
-            Agenda
-          </Button>
-        </ButtonGroup>
-      </Box>
     );
   };
 
+  const [currentDate, setCurrentDate] = useState(new Date());
+
   if (loading) {
     return (
-      <Box
-        sx={{
-          height: '70vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
+      <Box sx={{ height: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <CircularProgress />
       </Box>
     );
   }
-
+  
   return (
     <Box sx={{ height: '80vh', display: 'flex', flexDirection: 'column' }}>
       {error && (
@@ -262,14 +223,8 @@ const GeneralCalendarPage = () => {
 
           <Stack direction="row" spacing={2} alignItems="center">
             <Typography variant="subtitle2">Leyenda:</Typography>
-            <Chip
-              label="Completada"
-              sx={{ bgcolor: '#a5d6a7', fontWeight: 500 }}
-            />
-            <Chip
-              label="Pendiente"
-              sx={{ bgcolor: '#ef9a9a', fontWeight: 500 }}
-            />
+            <Chip label="Completada" sx={{ bgcolor: '#a5d6a7', fontWeight: 500 }} />
+            <Chip label="Pendiente" sx={{ bgcolor: '#ef9a9a', fontWeight: 500 }} />
           </Stack>
         </Box>
 
@@ -296,11 +251,11 @@ const GeneralCalendarPage = () => {
             style={{ height: '100%' }}
             messages={messages}
             eventPropGetter={eventStyleGetter}
-            components={{
-              toolbar: CustomToolbar,
-            }}
+            components={{ toolbar: CustomToolbar }}
             view={view}
             onView={setView}
+            date={currentDate}
+            onNavigate={date => setCurrentDate(date)}
             onSelectEvent={handleSelectEvent}
             tooltipAccessor={(event) =>
               `[${event.resource.userName}] ${
@@ -322,27 +277,19 @@ const GeneralCalendarPage = () => {
           <>
             <DialogTitle>Detalle de tarea</DialogTitle>
             <DialogContent dividers>
-              <Typography variant="h6" gutterBottom>
-                {selectedEvent.title}
-              </Typography>
-
+              <Typography variant="h6" gutterBottom>{selectedEvent.title}</Typography>
               <Typography variant="body2" gutterBottom>
                 Usuario:{' '}
                 <strong>{selectedEvent.resource.userName}</strong>
               </Typography>
-
               <Typography variant="body2" gutterBottom>
                 Fecha:{' '}
                 {moment(selectedEvent.start).format('DD/MM/YYYY')}
               </Typography>
-
               <Typography variant="body2" gutterBottom>
                 Estado:{' '}
-                {selectedEvent.resource.completed
-                  ? 'Completada'
-                  : 'Pendiente'}
+                {selectedEvent.resource.completed ? 'Completada' : 'Pendiente'}
               </Typography>
-
               {selectedEvent.resource.description && (
                 <Typography variant="body2" sx={{ mt: 1 }}>
                   Descripción: {selectedEvent.resource.description}

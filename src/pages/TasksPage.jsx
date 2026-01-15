@@ -20,7 +20,7 @@ import ListItemButton from '@mui/material/ListItemButton';
 import Tooltip from '@mui/material/Tooltip';
 
 import { useUser } from '../context/UserContext';
-import { fetchTasks, createTask } from '../services/api';
+import { fetchTasks, createTask, updateTask, deleteTask } from '../services/api';
 import CreateTaskModal from '../components/CreateTaskModal';
 
 const TasksPage = () => {
@@ -59,24 +59,35 @@ const TasksPage = () => {
     }
   }, [currentUser, allTasks]);
 
-  const handleToggleComplete = (taskId) => {
-    // Cambio solo en UI. Para persistir se necesitaría un endpoint PUT / PATCH.
-    setUserTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId ? { ...task, completed: !task.completed } : task
-      )
-    );
-    // También reflejamos el cambio en allTasks para mantener consistencia local
-    setAllTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === taskId ? { ...task, completed: !task.completed } : task
-      )
-    );
+  const handleToggleComplete = async (taskId) => {
+    const task = allTasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    try {
+      const updatedTask = await updateTask(
+        taskId,
+        { completed: !task.completed },
+        currentUser?.token // TODO: Manejar token de forma segura
+      );
+      setAllTasks((prevTasks) =>
+        prevTasks.map((t) => (t.id === taskId ? updatedTask : t))
+      );
+      setError(null);
+    } catch (err) {
+      console.error(err);
+      setError('Error al actualizar la tarea.');
+    }
   };
 
-  const handleDeleteTask = (taskId) => {
-    // UI-only delete. Para que sea real, necesitarías DELETE /api/tasks/:id.
-    setAllTasks((prev) => prev.filter((task) => task.id !== taskId));
+  const handleDeleteTask = async (taskId) => {
+    try {
+      await deleteTask(taskId, currentUser?.token); // TODO: Manejar token
+      setAllTasks((prev) => prev.filter((task) => task.id !== taskId));
+      setError(null);
+    } catch (err) {
+      console.error(err);
+      setError('Error al eliminar la tarea.');
+    }
   };
 
   const handleOpenModal = () => setModalOpen(true);

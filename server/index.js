@@ -2,7 +2,8 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const { users, tasks, messages } = require('./data');
+const bcrypt = require('bcryptjs');
+const db = require('./database'); // Import the database connection
 
 const app = express();
 const PORT = 3001;
@@ -14,130 +15,168 @@ app.use(bodyParser.json());
 
 // REGISTRO
 app.post('/api/auth/register', (req, res) => {
-  try {
-    console.log('POST /api/auth/register body:', req.body);
+  const { name, email, password } = req.body;
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: 'Faltan campos' });
+  }
 
-    const body = req.body || {};
-    const name = typeof body.name === 'string' ? body.name.trim() : '';
-    const email = typeof body.email === 'string' ? body.email.trim() : '';
-    const password = typeof body.password === 'string' ? body.password : '';
+  const emailNorm = email.toLowerCase();
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: 'Faltan campos' });
+  db.get('SELECT email FROM users WHERE email = ?', [emailNorm], (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
     }
-
-    const emailNorm = email.toLowerCase();
-
-    const existingUser = users.find(
-      (u) => String(u.email || '').toLowerCase() === emailNorm
-    );
-
-    if (existingUser) {
+    if (row) {
       return res.status(409).json({ error: 'El email ya está registrado' });
     }
 
-    const newUser = {
-      id: users.length ? users[users.length - 1].id + 1 : 1,
-      name,
-      email,
-      password, // SOLO DEMO
-    };
-
-    users.push(newUser);
-
-    const { password: _removed, ...safeUser } = newUser;
-    res.status(201).json(safeUser);
-  } catch (err) {
-    console.error('Error en /api/auth/register:', err);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
+    bcrypt.hash(password, 10, (err, hash) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error al hashear la contraseña' });
+      }
+      const sql = 'INSERT INTO users (name, email, password) VALUES (?, ?, ?)';
+      db.run(sql, [name, emailNorm, hash], function (err) {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+        res.status(201).json({ id: this.lastID, name, email: emailNorm });
+      });
+    });
+  });
 });
 
 // LOGIN
 app.post('/api/auth/login', (req, res) => {
-  try {
-    console.log('POST /api/auth/login body:', req.body);
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Faltan campos' });
+  }
 
-    const body = req.body || {};
-    const email = typeof body.email === 'string' ? body.email.trim() : '';
-    const password = typeof body.password === 'string' ? body.password : '';
+  const emailNorm = email.toLowerCase();
+  const sql = 'SELECT * FROM users WHERE email = ?';
 
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Faltan campos' });
+  db.get(sql, [emailNorm], (err, user) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
     }
-
-    const emailNorm = email.toLowerCase();
-
-    const user = users.find(
-      (u) =>
-        String(u.email || '').toLowerCase() === emailNorm &&
-        u.password === password
-    );
-
     if (!user) {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
-    const { password: _removed, ...safeUser } = user;
-    res.json(safeUser);
-  } catch (err) {
-    console.error('Error en /api/auth/login:', err);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
+    bcrypt.compare(password, user.password, (err, result) => {
+      if (err || !result) {
+        return res.status(401).json({ error: 'Credenciales inválidas' });
+      }
+      const { password: _, ...safeUser } = user;
+      res.json(safeUser);
+    });
+  });
 });
 
 // =============== USERS (solo lectura) ===============
 app.get('/api/users', (req, res) => {
-  const safe = users.map(({ password, ...rest }) => rest);
-  res.json(safe);
+  db.all('SELECT id, name, email, role FROM users', [], (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json(rows);
+  });
 });
 
 // =============== TASKS ===============
 app.get('/api/tasks', (req, res) => {
-  res.json(tasks);
+  db.all('SELECT * FROM tasks', [], (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    // SQLite stores booleans as 0 or 1, so we convert them back for the frontend
+    const tasks = rows.map(t => ({...t, completed: Boolean(t.completed)}));
+    res.json(tasks);
+  });
 });
 
 app.post('/api/tasks', (req, res) => {
-  const { title, dueDate, userId } = req.body || {};
-  if (!title || !dueDate || !userId) {
-    return res.status(400).json({ error: 'Faltan campos' });
+  const { title, dueDate, userId } = req.body;
+  if (!title || !userId) { // dueDate can be optional
+    return res.status(400).json({ error: 'Faltan campos obligatorios' });
   }
 
-  const newTask = {
-    id: tasks.length ? tasks[tasks.length - 1].id + 1 : 1,
-    title,
-    dueDate,
-    completed: false,
-    userId,
-  };
+  const sql = 'INSERT INTO tasks (title, dueDate, userId, completed) VALUES (?, ?, ?, 0)';
+  db.run(sql, [title, dueDate, userId], function (err) {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.status(201).json({ id: this.lastID, title, dueDate, userId, completed: false });
+  });
+});
 
-  tasks.push(newTask);
-  res.status(201).json(newTask);
+app.put('/api/tasks/:id', (req, res) => {
+  const { title, dueDate, completed } = req.body;
+  const sql = 'UPDATE tasks SET title = ?, dueDate = ?, completed = ? WHERE id = ?';
+  
+  // Get the current task to merge with new data
+  db.get('SELECT * FROM tasks WHERE id = ?', [req.params.id], (err, task) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!task) return res.status(404).json({ error: 'Tarea no encontrada' });
+
+    const newTitle = title !== undefined ? title : task.title;
+    const newDueDate = dueDate !== undefined ? dueDate : task.dueDate;
+    const newCompleted = completed !== undefined ? completed : task.completed;
+    
+    db.run(sql, [newTitle, newDueDate, newCompleted, req.params.id], function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ id: req.params.id, title: newTitle, dueDate: newDueDate, completed: newCompleted, userId: task.userId });
+    });
+  });
+});
+
+app.delete('/api/tasks/:id', (req, res) => {
+  const sql = 'DELETE FROM tasks WHERE id = ?';
+  db.run(sql, [req.params.id], function (err) {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    if (this.changes === 0) {
+      return res.status(404).json({ error: 'Tarea no encontrada' });
+    }
+    res.status(204).send();
+  });
 });
 
 // =============== MESSAGES ===============
 app.get('/api/messages', (req, res) => {
-  res.json(messages);
+    db.all('SELECT * FROM messages', [], (err, rows) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json(rows);
+    });
 });
 
 app.post('/api/messages', (req, res) => {
-  const { from, to, text } = req.body || {};
-  if (!from || !to || !text) {
-    return res.status(400).json({ error: 'Faltan campos' });
-  }
+    const { from_user_id, to_user_id, text } = req.body;
+    if (!from_user_id || !to_user_id || !text) {
+        return res.status(400).json({ error: 'Faltan campos' });
+    }
 
-  const newMessage = {
-    id: messages.length ? messages[messages.length - 1].id + 1 : 1,
-    from,
-    to,
-    text,
-    createdAt: new Date().toISOString(),
-  };
-
-  messages.push(newMessage);
-  res.status(201).json(newMessage);
+    const createdAt = new Date().toISOString();
+    const sql = 'INSERT INTO messages (from_user_id, to_user_id, text, createdAt) VALUES (?, ?, ?, ?)';
+    db.run(sql, [from_user_id, to_user_id, text, createdAt], function(err) {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.status(201).json({ id: this.lastID, from_user_id, to_user_id, text, createdAt });
+    });
 });
+
 
 app.listen(PORT, () => {
   console.log(`Backend escuchando en http://localhost:${PORT}`);
 });
+

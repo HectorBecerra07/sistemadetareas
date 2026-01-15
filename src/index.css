@@ -1,4 +1,31 @@
-/* styles are now handled by MUI's CssBaseline and ThemeProvider */
+/* src/index.css o src/main.css */
+
+/* Reset básico */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Que html, body y #root ocupen toda la pantalla */
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+/* Quita márgenes del body */
 body {
   margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* MUY IMPORTANTE: quitar el max-width del root */
+#root {
+  max-width: none;   /* antes estaba 1280px */
+  margin: 0;         /* quita el centrado */
+  padding: 0;        /* ya no hace falta padding global */
 }

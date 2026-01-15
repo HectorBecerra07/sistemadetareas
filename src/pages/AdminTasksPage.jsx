@@ -18,13 +18,16 @@ import {
   Tooltip,
   Alert,
   CircularProgress,
+  Button,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
 import EditIcon from '@mui/icons-material/Edit';
+import AddIcon from '@mui/icons-material/Add';
 
 import { useUser } from '../context/UserContext';
-import { fetchTasks, fetchUsers, updateTask, deleteTask } from '../services/api';
+import { fetchTasks, fetchUsers, updateTask, deleteTask, createTask } from '../services/api';
+import CreateTaskModal from '../components/CreateTaskModal';
 
 const AdminTasksPage = () => {
   const { currentUser } = useUser();
@@ -34,6 +37,7 @@ const AdminTasksPage = () => {
   const [draft, setDraft] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const isAdmin = currentUser?.role === 'admin';
 
@@ -58,24 +62,6 @@ const AdminTasksPage = () => {
     loadData();
   }, []);
 
-  if (!currentUser) {
-    return (
-      <Box sx={{ p: 2 }}>
-        <Typography>Debes iniciar sesión.</Typography>
-      </Box>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <Box sx={{ p: 2 }}>
-        <Alert severity="warning">
-          Solo un administrador puede acceder al panel de tareas.
-        </Alert>
-      </Box>
-    );
-  }
-
   const handleStartEdit = (task) => {
     setEditingId(task.id);
     setDraft({
@@ -94,24 +80,17 @@ const AdminTasksPage = () => {
     const original = tasks.find((t) => t.id === id);
     if (!original) return;
 
-    const updated = {
-      ...original,
+    const updatedData = {
       title: draft.title,
-      dueDate: draft.dueDate ? new Date(draft.dueDate).toISOString() : original.dueDate,
+      dueDate: draft.dueDate ? new Date(draft.dueDate).toISOString() : null,
       userId: draft.userId,
       completed: draft.completed,
     };
 
     try {
-      await updateTask(id, {
-        title: updated.title,
-        dueDate: updated.dueDate,
-        userId: updated.userId,
-        completed: updated.completed,
-      }, currentUser?.token);
-
+      const updatedTask = await updateTask(id, updatedData, currentUser?.token);
       setTasks((prev) =>
-        prev.map((t) => (t.id === id ? updated : t))
+        prev.map((t) => (t.id === id ? { ...original, ...updatedTask } : t))
       );
       setEditingId(null);
       setDraft({});
@@ -132,18 +111,32 @@ const AdminTasksPage = () => {
       setError('Error al eliminar la tarea.');
     }
   };
+  
+  const handleAddTask = async (newTaskData) => {
+    try {
+      const newlyCreatedTask = await createTask(newTaskData, currentUser?.token);
+      setTasks((prevTasks) => [...prevTasks, newlyCreatedTask]);
+      setError(null);
+    } catch (err) {
+      console.error(err);
+      setError('Error al crear la tarea.');
+    }
+  };
 
-  if (loading) {
+  if (!currentUser || loading) {
     return (
-      <Box
-        sx={{
-          minHeight: '60vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
         <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <Box sx={{ p: 2 }}>
+        <Alert severity="warning">
+          Solo un administrador puede acceder al panel de tareas.
+        </Alert>
       </Box>
     );
   }
@@ -154,18 +147,28 @@ const AdminTasksPage = () => {
   return (
     <Box>
       {error && (
-        <Alert severity="error" sx={{ mb: 1 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
-
-      <Typography variant="h5" gutterBottom>
-        Panel de Tareas (Administrador)
-      </Typography>
-
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        Aquí puedes asignar, editar, cambiar fecha, marcar como completada o eliminar cualquier tarea.
-      </Typography>
+      
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Box>
+          <Typography variant="h5" gutterBottom>
+            Panel de Tareas (Administrador)
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Aquí puedes asignar, editar, y gestionar todas las tareas del sistema.
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setModalOpen(true)}
+        >
+          Crear Tarea
+        </Button>
+      </Box>
 
       <Paper sx={{ p: 1.5 }}>
         <TableContainer sx={{ overflowX: 'auto' }}>
@@ -233,6 +236,7 @@ const AdminTasksPage = () => {
                         onChange={(e) =>
                           handleDraftChange('dueDate', e.target.value)
                         }
+                        InputLabelProps={{ shrink: true }}
                       />
                     ) : task.dueDate ? (
                       new Date(task.dueDate).toLocaleDateString()
@@ -258,15 +262,22 @@ const AdminTasksPage = () => {
                   {/* Acciones */}
                   <TableCell align="right">
                     {isEditing ? (
-                      <Tooltip title="Guardar cambios">
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => handleSave(task.id)}
-                        >
-                          <SaveIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
+                      <>
+                        <Tooltip title="Guardar cambios">
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => handleSave(task.id)}
+                          >
+                            <SaveIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Cancelar">
+                           <IconButton size="small" onClick={() => setEditingId(null)}>
+                                <EditIcon fontSize="small" />
+                           </IconButton>
+                        </Tooltip>
+                      </>
                     ) : (
                       <Tooltip title="Editar tarea">
                         <IconButton
@@ -294,6 +305,13 @@ const AdminTasksPage = () => {
         </Table>
         </TableContainer>
       </Paper>
+      
+      <CreateTaskModal
+        open={modalOpen}
+        handleClose={() => setModalOpen(false)}
+        handleAddTask={handleAddTask}
+        users={users}
+      />
     </Box>
   );
 };
