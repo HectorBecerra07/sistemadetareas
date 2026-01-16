@@ -47,7 +47,7 @@ const RegisterPage = () => {
     try {
       setSubmitting(true);
       await register(name.trim(), email.trim(), password.trim());
-      navigate('/');
+      navigate('/login');
     } catch (err) {
       setError(err.message || 'Error al registrar el usuario.');
     } finally {

@@ -21,6 +21,7 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import GroupIcon from '@mui/icons-material/Group';
 import MailIcon from '@mui/icons-material/Mail';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 import { useUser } from '../context/UserContext';
 
@@ -39,6 +40,7 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
     { text: 'Calendario Personal', icon: <CalendarMonthIcon />, path: '/calendar' },
     { text: 'Calendario General', icon: <GroupIcon />, path: '/calendar/general' },
     { text: 'Mensajes', icon: <MailIcon />, path: '/messages' },
+    { text: 'Mi Perfil', icon: <AccountCircleIcon />, path: '/profile' },
   ];
 
   const adminNavItems = isAdmin
@@ -90,6 +92,7 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
         {currentUser && (
           <>
             <Avatar
+              src={currentUser.avatarUrl}
               sx={{
                 width: 64,
                 height: 64,
@@ -99,7 +102,7 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
                 border: '2px solid white',
               }}
             >
-              {currentUser.name[0]}
+              {!currentUser.avatarUrl && currentUser.name[0]}
             </Avatar>
             <Typography variant="h6" sx={{ fontWeight: 600, textAlign: 'center' }}>
               {currentUser.name}

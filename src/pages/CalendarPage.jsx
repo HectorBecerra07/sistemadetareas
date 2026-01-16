@@ -54,16 +54,17 @@ const CalendarPage = () => {
         const loadTasksForCalendar = async () => {
             try {
                 setLoading(true);
-                const allTasks = await fetchTasks();
-                const userTasks = allTasks.filter(task => task.userId === currentUser.id);
-                const mappedEvents = userTasks.map(task => ({
-                    id: task.id,
-                    title: task.title,
-                    start: new Date(task.dueDate),
-                    end: new Date(task.dueDate),
-                    allDay: true,
-                    resource: { completed: task.completed, description: task.description || '' },
-                }));
+                const userTasks = await fetchTasks();
+                const mappedEvents = userTasks
+                    .filter(task => task.dueDate) // Solo incluir tareas con fecha
+                    .map(task => ({
+                        id: task.id,
+                        title: task.title,
+                        start: new Date(task.dueDate),
+                        end: new Date(task.dueDate),
+                        allDay: true,
+                        resource: { completed: task.completed, description: task.description || '' },
+                    }));
                 setEvents(mappedEvents);
                 setError(null);
             } catch (err) {

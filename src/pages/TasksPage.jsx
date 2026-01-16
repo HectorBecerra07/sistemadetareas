@@ -25,7 +25,6 @@ import CreateTaskModal from '../components/CreateTaskModal';
 
 const TasksPage = () => {
   const { currentUser } = useUser();
-  const [allTasks, setAllTasks] = useState([]);
   const [userTasks, setUserTasks] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -34,10 +33,14 @@ const TasksPage = () => {
 
   useEffect(() => {
     const loadTasks = async () => {
+      if (!currentUser) {
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
         const fetchedTasks = await fetchTasks();
-        setAllTasks(fetchedTasks);
+        setUserTasks(fetchedTasks);
         setError(null);
       } catch (err) {
         console.error(err);
@@ -49,27 +52,17 @@ const TasksPage = () => {
       }
     };
     loadTasks();
-  }, []);
-
-  useEffect(() => {
-    if (currentUser) {
-      setUserTasks(allTasks.filter((task) => task.userId === currentUser.id));
-    } else {
-      setUserTasks([]);
-    }
-  }, [currentUser, allTasks]);
+  }, [currentUser]);
 
   const handleToggleComplete = async (taskId) => {
-    const task = allTasks.find((t) => t.id === taskId);
+    const task = userTasks.find((t) => t.id === taskId);
     if (!task) return;
 
     try {
-      const updatedTask = await updateTask(
-        taskId,
-        { completed: !task.completed },
-        currentUser?.token // TODO: Manejar token de forma segura
-      );
-      setAllTasks((prevTasks) =>
+      const updatedTask = await updateTask(taskId, {
+        completed: !task.completed,
+      });
+      setUserTasks((prevTasks) =>
         prevTasks.map((t) => (t.id === taskId ? updatedTask : t))
       );
       setError(null);
@@ -81,8 +74,8 @@ const TasksPage = () => {
 
   const handleDeleteTask = async (taskId) => {
     try {
-      await deleteTask(taskId, currentUser?.token); // TODO: Manejar token
-      setAllTasks((prev) => prev.filter((task) => task.id !== taskId));
+      await deleteTask(taskId);
+      setUserTasks((prev) => prev.filter((task) => task.id !== taskId));
       setError(null);
     } catch (err) {
       console.error(err);
@@ -96,9 +89,8 @@ const TasksPage = () => {
   const handleAddTask = async (newTaskData) => {
     if (!currentUser) return;
     try {
-      const taskWithUser = { ...newTaskData, userId: currentUser.id };
-      const newlyCreatedTask = await createTask(taskWithUser);
-      setAllTasks((prevTasks) => [...prevTasks, newlyCreatedTask]);
+      const newlyCreatedTask = await createTask(newTaskData);
+      setUserTasks((prevTasks) => [...prevTasks, newlyCreatedTask]);
       setError(null);
     } catch (err) {
       console.error(err);

@@ -44,7 +44,7 @@ const MessagesPage = () => {
         setLoading(true);
         const [fetchedUsers, fetchedMessages] = await Promise.all([
           fetchUsers(),
-          fetchMessages(currentUser.token),
+          fetchMessages(),
         ]);
         setUsers(fetchedUsers.filter(u => u.id !== currentUser.id));
         setMessages(fetchedMessages);
@@ -78,10 +78,9 @@ const MessagesPage = () => {
     try {
       const newMessage = {
         text: messageText,
-        from_user_id: currentUser.id,
         to_user_id: selectedUserId,
       };
-      const sentMessage = await createMessage(newMessage, currentUser.token);
+      const sentMessage = await createMessage(newMessage);
       setMessages((prev) => [...prev, sentMessage]);
       setMessageText('');
     } catch (err) {

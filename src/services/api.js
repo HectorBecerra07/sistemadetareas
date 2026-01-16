@@ -1,99 +1,103 @@
 // src/services/api.js
 const API_URL = 'http://localhost:3001/api';
 
-// ============ AUTH ============
+const getAuthToken = () => {
+  return localStorage.getItem('token');
+};
 
-export const registerUser = async ({ name, email, password }) => {
-  const res = await fetch(`${API_URL}/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, email, password }),
-  });
+const apiFetch = async (url, options = {}) => {
+  const token = getAuthToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_URL}${url}`, { ...options, headers });
+
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    throw new Error(data.error || 'Error al registrar');
+    throw new Error(data.error || `Error en la petición a ${url}`);
   }
+
+  if (res.status === 204) {
+    return null;
+  }
+
   return res.json();
 };
 
-export const loginUser = async ({ email, password }) => {
-  const res = await fetch(`${API_URL}/auth/login`, {
+// ============ AUTH ============
+
+export const registerUser = (userData) =>
+  apiFetch('/auth/register', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify(userData),
   });
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data.error || 'Error al iniciar sesión');
+
+export const loginUser = async (credentials) => {
+  const data = await apiFetch('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(credentials),
+  });
+
+  if (data.token) {
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
   }
-  return res.json();
+  return data;
+};
+
+export const logoutUser = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+};
+
+export const getCurrentUser = () => {
+  const user = localStorage.getItem('user');
+  return user ? JSON.parse(user) : null;
 };
 
 // ============ USERS ============
 
-export const fetchUsers = async () => {
-  const res = await fetch(`${API_URL}/users`);
-  if (!res.ok) throw new Error('Error al obtener usuarios');
-  return res.json();
-};
+export const fetchUsers = () => apiFetch('/users');
+
+export const updateUserProfile = (profileData) =>
+  apiFetch('/users/profile', {
+    method: 'PUT',
+    body: JSON.stringify(profileData),
+  });
 
 // ============ TASKS ============
 
-export const fetchTasks = async () => {
-  const res = await fetch(`${API_URL}/tasks`);
-  if (!res.ok) throw new Error('Error al obtener tareas');
-  return res.json();
-};
+export const fetchTasks = () => apiFetch('/tasks');
 
-const getAuthHeaders = (token) => {
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
-  };
-};
-
-export const createTask = async (task, token) => {
-  const res = await fetch(`${API_URL}/tasks`, {
+export const createTask = (task) =>
+  apiFetch('/tasks', {
     method: 'POST',
-    headers: getAuthHeaders(token),
     body: JSON.stringify(task),
   });
-  if (!res.ok) throw new Error('Error al crear tarea');
-  return res.json();
-};
 
-export const updateTask = async (id, data, token) => {
-  const res = await fetch(`${API_URL}/tasks/${id}`, {
+export const updateTask = (id, data) =>
+  apiFetch(`/tasks/${id}`, {
     method: 'PUT',
-    headers: getAuthHeaders(token),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Error al actualizar tarea');
-  return res.json();
-};
 
-export const deleteTask = async (id, token) => {
-  const res = await fetch(`${API_URL}/tasks/${id}`, {
+export const deleteTask = (id) =>
+  apiFetch(`/tasks/${id}`, {
     method: 'DELETE',
-    headers: getAuthHeaders(token),
   });
-  if (!res.ok) throw new Error('Error al borrar tarea');
-};
 
 // ============ MESSAGES ============
 
-export const fetchMessages = async () => {
-  const res = await fetch(`${API_URL}/messages`);
-  if (!res.ok) throw new Error('Error al obtener mensajes');
-  return res.json();
-};
+export const fetchMessages = () => apiFetch('/messages');
 
-export const createMessage = async (message, token) => {
-  const res = await fetch(`${API_URL}/messages`, {
+export const createMessage = (message) =>
+  apiFetch('/messages', {
     method: 'POST',
-    headers: getAuthHeaders(token),
     body: JSON.stringify(message),
   });
-  if (!res.ok) throw new Error('Error al crear mensaje');
-  return res.json();
-};

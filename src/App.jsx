@@ -1,6 +1,6 @@
 // src/App.jsx
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import AppLayout from './components/AppLayout';
 import DashboardPage from './pages/DashboardPage';
 import TasksPage from './pages/TasksPage';
@@ -8,9 +8,10 @@ import CalendarPage from './pages/CalendarPage';
 import GeneralCalendarPage from './pages/GeneralCalendarPage';
 import MessagesPage from './pages/MessagesPage';
 import RegisterPage from './pages/RegisterPage';
-import LoginPage from './pages/LoginPage'; // lo creamos abajo
-import { useUser } from './context/UserContext';
+import LoginPage from './pages/LoginPage';
 import AdminTasksPage from './pages/AdminTasksPage';
+import ProfilePage from './pages/ProfilePage';
+import { useUser } from './context/UserContext';
 
 const ProtectedRoutes = () => {
   const { currentUser, loading } = useUser();
@@ -19,7 +20,11 @@ const ProtectedRoutes = () => {
 
   if (!currentUser) return <Navigate to="/login" replace />;
 
-  return <AppLayout />;
+  return (
+    <AppLayout>
+      <Outlet />
+    </AppLayout>
+  );
 };
 
 const App = () => {
@@ -37,7 +42,7 @@ const App = () => {
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/calendar/general" element={<GeneralCalendarPage />} />
           <Route path="/messages" element={<MessagesPage />} />
-          // dentro de Routes
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/admin/tasks" element={<AdminTasksPage />} />
         </Route>
 

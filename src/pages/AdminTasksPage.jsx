@@ -88,7 +88,7 @@ const AdminTasksPage = () => {
     };
 
     try {
-      const updatedTask = await updateTask(id, updatedData, currentUser?.token);
+      const updatedTask = await updateTask(id, updatedData);
       setTasks((prev) =>
         prev.map((t) => (t.id === id ? { ...original, ...updatedTask } : t))
       );
@@ -103,7 +103,7 @@ const AdminTasksPage = () => {
 
   const handleDelete = async (id) => {
     try {
-      await deleteTask(id, currentUser?.token);
+      await deleteTask(id);
       setTasks((prev) => prev.filter((t) => t.id !== id));
       setError(null);
     } catch (err) {
@@ -114,7 +114,7 @@ const AdminTasksPage = () => {
   
   const handleAddTask = async (newTaskData) => {
     try {
-      const newlyCreatedTask = await createTask(newTaskData, currentUser?.token);
+      const newlyCreatedTask = await createTask(newTaskData);
       setTasks((prevTasks) => [...prevTasks, newlyCreatedTask]);
       setError(null);
     } catch (err) {

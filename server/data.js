@@ -42,7 +42,7 @@ let messages = [
   },
 ];
 
-module.exports = {
+export {
   users,
   tasks,
   messages,

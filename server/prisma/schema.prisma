@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URL")
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  password  String
+  role      String    @default("user")
+  avatarUrl String?
+
+  tasks     Task[]
+  sentMessages Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Task {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  dueDate     DateTime?
+  completed   Boolean   @default(false)
+  
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Message {
+  id          Int      @id @default(autoincrement())
+  text        String
+  isRead      Boolean  @default(false)
+
+  from_user_id Int
+  to_user_id   Int
+  fromUser    User     @relation("SentMessages", fields: [from_user_id], references: [id], onDelete: Cascade)
+  toUser      User     @relation("ReceivedMessages", fields: [to_user_id], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([from_user_id])
+  @@index([to_user_id])
+}

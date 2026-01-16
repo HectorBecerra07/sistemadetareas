@@ -1,6 +1,4 @@
-// src/components/AppLayout.jsx
 import React, { useState } from 'react';
-// import { Outlet } from 'react-router-dom'; // No es necesario, se recibe por props
 import { useTheme, useMediaQuery } from '@mui/material';
 import Box from '@mui/material/Box';
 import AppBar from '@mui/material/AppBar';
@@ -12,7 +10,7 @@ import Sidebar from './Sidebar';
 
 const drawerWidth = 240;
 
-const AppLayout = ({ children }) => { // Recibe children
+const AppLayout = ({ children }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -69,7 +67,7 @@ const AppLayout = ({ children }) => { // Recibe children
           overflow: 'auto',
         }}
       >
-        {children} {/* Renderiza el Outlet que viene de ProtectedRoutes */}
+        {children} {/* Renders the page component (e.g., TasksPage) via Outlet */}
       </Box>
     </Box>
   );
