@@ -9,7 +9,12 @@ import prisma from './lib/prisma.js';
 const app = express();
 const PORT = 3001;
 
-app.use(cors());
+const corsOptions = {
+  origin: 'https://sistemadetareas.vercel.app',
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
 // =============== MIDDLEWARE ===============
