@@ -1,19 +1,27 @@
-He analizado tu proyecto de nuevo para identificar posibles problemas de despliegue en Vercel.
+He realizado una revisión exhaustiva de tu proyecto y he encontrado varios problemas críticos que impedían su correcto despliegue y funcionamiento en Vercel. He realizado las siguientes correcciones:
 
-Encontré un pequeño problema en tu archivo `vite.config.js` donde hacía referencia a iconos de PWA (Progressive Web App) que no existen en tu proyecto. He corregido esto, ya que podría causar que la compilación falle en Vercel.
+**1. Configuración para Despliegue Monorepo en Vercel:**
+*   **He creado el archivo `vercel.json`:** Este archivo es esencial para que Vercel entienda que tu proyecto es un "monorepo" (contiene tanto el frontend como el backend). Lo he configurado para que todas las peticiones que empiecen por `/api` se redirijan a tu backend.
+*   **He creado el archivo `.vercelignore`:** para evitar subir archivos innecesarios como `node_modules` y `explanation.md`.
 
-Sin embargo, creo que la razón principal por la que tu aplicación no funciona después del despliegue es el mismo problema de CORS y la URL de la API que discutimos antes.
+**2. Adaptación del Backend para Entorno Serverless:**
+*   **He modificado `server/index.js`:** Vercel ejecuta los backends como "funciones serverless", que son diferentes a un servidor tradicional. He eliminado la parte de `app.listen()` y he exportado la `app` de Express, que es como Vercel necesita que esté configurado.
 
-Para ser claros, un "fallo de despliegue" puede significar dos cosas:
-1.  **La compilación falla en Vercel:** Verías un error en los registros de despliegue de Vercel. La corrección que acabo de aplicar podría resolver esto si esa fuera la causa.
-2.  **El despliegue tiene éxito, pero la aplicación no funciona:** Esto es lo que probablemente está sucediendo. Ves una página, pero el inicio de sesión/registro falla con errores de red en la consola del navegador.
+**3. Corrección de la Configuración de PWA:**
+*   **He modificado `vite.config.js`:** He eliminado la referencia a unos iconos que no existían en tu proyecto para evitar posibles errores durante la fase de construcción en Vercel.
 
-Si el despliegue tiene éxito pero la aplicación no funciona, es casi seguro porque:
-1.  **Tu backend no está desplegado en una URL pública.**
-2.  **La variable de entorno `VITE_API_URL` no está configurada en tu proyecto de frontend de Vercel.**
+**¿Qué necesitas hacer ahora?**
 
-Por favor, asegúrate de haber seguido los pasos que te proporcioné anteriormente:
-1.  **Despliega tu backend** (el directorio `server`) a un servicio de hosting público.
-2.  **Establece la `VITE_API_URL`** en la configuración de tu frontend de Vercel a la URL pública de tu backend desplegado.
+Aunque he corregido el código y la configuración, **el despliegue seguirá fallando si no completas los siguientes pasos.** Esto es algo que debes configurar tú en la plataforma de Vercel:
 
-Si ya has hecho esto y el despliegue sigue fallando, por favor, proporcióname los **registros de error de tu despliegue de Vercel**. Esto nos dirá exactamente por qué está fallando la compilación.
+**1. Configura el "Root Directory" en Vercel:**
+*   En la configuración de tu proyecto en Vercel, asegúrate de que el **"Root Directory"** apunte al directorio raíz de tu proyecto (donde está el `package.json` del frontend), no al directorio `server`. Vercel detectará automáticamente el frontend y el backend gracias al `vercel.json`.
+
+**2. Configura las Variables de Entorno en Vercel:**
+*   Tu backend necesita dos "secretos" para funcionar: la cadena de conexión a la base de datos y el secreto para los tokens de autenticación.
+*   Ve a la configuración de tu proyecto en Vercel, a la sección de "Environment Variables".
+*   Añade las siguientes variables:
+    *   `POSTGRES_URL`: La URL de tu base de datos de PostgreSQL en producción.
+    *   `JWT_SECRET`: Una cadena de texto larga y secreta para firmar los tokens. Puedes generar una aquí: [https://generate-secret.now.sh/32](https://generate-secret.now.sh/32)
+
+Una vez que hayas configurado el "Root Directory" y las variables de entorno, tu proyecto debería desplegarse y funcionar correctamente en Vercel.

@@ -7,7 +7,6 @@ import jwt from 'jsonwebtoken';
 import prisma from './lib/prisma.js';
 
 const app = express();
-const PORT = 3001;
 
 const corsOptions = {
   origin: ["https://sistemadetareas.vercel.app", "http://localhost:5173"],
@@ -291,6 +290,4 @@ app.post('/api/messages', authenticateToken, async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend escuchando en http://localhost:${PORT}`);
-});
+export default app;
