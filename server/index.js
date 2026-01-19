@@ -10,8 +10,9 @@ const app = express();
 const PORT = 3001;
 
 const corsOptions = {
-  origin: 'https://sistemadetareas.vercel.app',
-  optionsSuccessStatus: 200,
+  origin: ["https://sistemadetareas.vercel.app", "http://localhost:5173"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
 };
 
 app.use(cors(corsOptions));
