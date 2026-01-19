@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      includeAssets: ['icon-192x192.svg', 'icon-512x512.svg', 'maskable-icon-512x512.svg'],
       manifest: {
         name: 'Work Tareas',
         short_name: 'WorkTareas',
