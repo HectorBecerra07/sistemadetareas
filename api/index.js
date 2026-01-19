@@ -9,7 +9,7 @@ import prisma from './lib/prisma.js';
 const app = express();
 
 const corsOptions = {
-  origin: ["https://sistemadetareas.vercel.app", "http://localhost:5173"],
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
 };
