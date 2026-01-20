@@ -67,7 +67,7 @@ const ProfilePage = () => {
         <Box component="form" onSubmit={handleSubmit}>
           <Grid container spacing={3} alignItems="center">
             {/* Avatar */}
-            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Grid xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
               <Avatar
                 src={formState.avatarUrl}
                 sx={{ width: 120, height: 120, fontSize: 60, mb: 2 }}
@@ -77,7 +77,7 @@ const ProfilePage = () => {
             </Grid>
 
             {/* Email */}
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <TextField
                 label="Correo Electrónico"
                 name="email"
@@ -90,7 +90,7 @@ const ProfilePage = () => {
             </Grid>
 
             {/* Name */}
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <TextField
                 label="Nombre Completo"
                 name="name"
@@ -102,7 +102,7 @@ const ProfilePage = () => {
             </Grid>
             
             {/* Avatar URL */}
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <TextField
                 label="URL del Avatar"
                 name="avatarUrl"
@@ -117,13 +117,13 @@ const ProfilePage = () => {
             </Grid>
 
             {error && (
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Alert severity="error">{error}</Alert>
               </Grid>
             )}
 
             {/* Submit Button */}
-            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Grid xs={12} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
               <Button
                 type="submit"
                 variant="contained"

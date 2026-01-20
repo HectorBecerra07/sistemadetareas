@@ -4,14 +4,17 @@ import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from './lib/prisma.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-app.use((req, res, next) => {
-  console.log("Origin:", req.headers.origin, "Method:", req.method, "URL:", req.url);
-  next();
-});
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../dist')));
 
+// CORS and Express JSON middleware
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
@@ -23,22 +26,22 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(null, false); // <- NO error
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-// CORS primero
 app.use(cors(corsOptions));
-// Responde preflight a TODAS las rutas
 app.options("*", cors(corsOptions));
-
 app.use(express.json());
 
+// API routes
 // =============== MIDDLEWARE ===============
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -54,8 +57,6 @@ const authenticateToken = (req, res, next) => {
 };
 
 // =============== AUTH ===============
-
-// REGISTRO
 app.post('/api/auth/register', async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
@@ -90,7 +91,6 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-// LOGIN
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -149,7 +149,6 @@ app.put('/api/users/profile', authenticateToken, async (req, res) => {
   const newEmail = email ? email.toLowerCase() : undefined;
 
   try {
-    // Si el email ha cambiado, verificar que no exista en otro usuario
     if (newEmail && newEmail !== req.user.email) {
       const existingUser = await prisma.user.findUnique({
         where: { email: newEmail },
@@ -170,7 +169,6 @@ app.put('/api/users/profile', authenticateToken, async (req, res) => {
 
     const { password: _, ...safeUser } = updatedUser;
 
-    // Re-issue a new token with the updated user data
     const token = jwt.sign(safeUser, process.env.JWT_SECRET, {
       expiresIn: '1h',
     });
@@ -179,7 +177,6 @@ app.put('/api/users/profile', authenticateToken, async (req, res) => {
     
   } catch (error) {
     console.error(error);
-    // Prisma unique constraint violation code
     if (error.code === 'P2002') {
        return res.status(409).json({ error: 'El email ya está en uso.' });
     }
@@ -224,7 +221,6 @@ app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
   const { title, dueDate, completed } = req.body;
 
   try {
-    // Opcional: Verificar que la tarea pertenece al usuario
     const task = await prisma.task.findFirst({
       where: { id: parseInt(id, 10), userId: req.user.id },
     });
@@ -255,7 +251,6 @@ app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
 app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
   try {
-    // Opcional: Verificar que la tarea pertenece al usuario
     const task = await prisma.task.findFirst({
       where: { id: parseInt(id, 10), userId: req.user.id },
     });
@@ -312,12 +307,16 @@ app.post('/api/messages', authenticateToken, async (req, res) => {
   }
 });
 
+// The "catchall" handler: for any request that doesn't match one above, send back React's index.html file.
+// This needs to be the last route.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
+
+// Start the server
+const port = process.env.PORT || 3001;
+app.listen(port, () => {
+  console.log(`Server is listening on port ${port}`);
+});
+
 export default app;
-
-if (process.env.NODE_ENV !== 'production') {
-  const port = process.env.PORT || 3001;
-  app.listen(port, () => {
-    console.log(`Server is listening on port ${port}`);
-  });
-}
-
