@@ -8,13 +8,27 @@ import prisma from './lib/prisma.js';
 
 const app = express();
 
+const allowedOrigins = [
+  'https://sistemadetareas.vercel.app',
+  'https://sistemadetareas-3scdroi1m-darmax1.vercel.app'
+  // We can add more origins here if needed
+];
+
 const corsOptions = {
-  origin: "*",
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || /https:\/\/sistemadetareas-.*\.vercel\.app/.test(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
 };
 
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // enable pre-flight for all routes
+
 app.use(bodyParser.json());
 
 // =============== MIDDLEWARE ===============
