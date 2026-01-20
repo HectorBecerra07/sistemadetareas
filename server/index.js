@@ -1,35 +1,43 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import bodyParser from 'body-parser';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from './lib/prisma.js';
 
 const app = express();
 
+app.use((req, res, next) => {
+  console.log("Origin:", req.headers.origin, "Method:", req.method, "URL:", req.url);
+  next();
+});
+
 const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:5173",
   'https://sistemadetareas.vercel.app',
   'https://sistemadetareas-3scdroi1m-darmax1.vercel.app'
-  // We can add more origins here if needed
 ];
 
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin) || /https:\/\/sistemadetareas-.*\.vercel\.app/.test(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(null, false); // <- NO error
   },
-  methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
+// CORS primero
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // enable pre-flight for all routes
+// Responde preflight a TODAS las rutas
+app.options("*", cors(corsOptions));
 
-app.use(bodyParser.json());
+app.use(express.json());
 
 // =============== MIDDLEWARE ===============
 const authenticateToken = (req, res, next) => {
