@@ -134,7 +134,7 @@ const DashboardPage = () => {
 
       {/* Tarjetas principales */}
       <Grid container spacing={3}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <Card sx={{ borderRadius: 3, height: '100%' }}>
             <CardContent sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
               <Box>
@@ -152,7 +152,7 @@ const DashboardPage = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <Card sx={{ borderRadius: 3, height: '100%' }}>
             <CardContent sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
               <Box>
@@ -170,7 +170,7 @@ const DashboardPage = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <Card sx={{ borderRadius: 3, height: '100%' }}>
             <CardContent sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
               <Box>
@@ -188,7 +188,7 @@ const DashboardPage = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <Card sx={{ borderRadius: 3, height: '100%' }}>
             <CardContent>
               <Typography color="text.secondary" gutterBottom>
@@ -212,7 +212,7 @@ const DashboardPage = () => {
       
       {/* Tareas Recientes */}
       <Grid container spacing={3} sx={{ mt: 1 }}>
-        <Grid item xs={12}>
+        <Grid xs={12}>
             <Typography variant="h6" gutterBottom>
                 Tareas Próximas
             </Typography>
