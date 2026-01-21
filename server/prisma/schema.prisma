@@ -31,7 +31,11 @@ model Task {
   title       String
   description String?
   dueDate     DateTime?
+  startTime   DateTime?
+  endTime     DateTime?
   completed   Boolean   @default(false)
+  completedAt DateTime?
+  priority    Priority  @default(media)
   
   userId      Int
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -40,6 +44,12 @@ model Task {
   updatedAt   DateTime  @updatedAt
 
   @@index([userId])
+}
+
+enum Priority {
+  baja
+  media
+  alta
 }
 
 model Message {

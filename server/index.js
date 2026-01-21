@@ -18,6 +18,7 @@ app.use(express.static(path.join(__dirname, '../dist')));
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
+  "http://localhost:5174",
   "http://127.0.0.1:3000",
   "http://127.0.0.1:5173",
   'https://sistemadetareas.vercel.app',
@@ -26,10 +27,11 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: (origin, callback) => {
+    console.log("CORS Origin Check:", origin); // Add this for debugging
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(null, false); // Changed to callback(null, false)
     }
   },
   credentials: true,
@@ -197,7 +199,7 @@ app.get('/api/tasks', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/tasks', authenticateToken, async (req, res) => {
-  const { title, dueDate } = req.body;
+  const { title, dueDate, priority, startTime, endTime } = req.body;
   if (!title) {
     return res.status(400).json({ error: 'Faltan campos obligatorios' });
   }
@@ -208,6 +210,9 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
         title,
         dueDate: dueDate ? new Date(dueDate) : null,
         userId: req.user.id,
+        priority: priority,
+        startTime: startTime ? new Date(startTime) : null,
+        endTime: endTime ? new Date(endTime) : null,
       },
     });
     res.status(201).json(task);
@@ -218,7 +223,7 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
 
 app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
-  const { title, dueDate, completed } = req.body;
+  const { title, dueDate, completed, priority, startTime, endTime } = req.body;
 
   try {
     const task = await prisma.task.findFirst({
@@ -237,6 +242,9 @@ app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
         title,
         dueDate: dueDate ? new Date(dueDate) : undefined,
         completed,
+        priority,
+        startTime: startTime ? new Date(startTime) : undefined,
+        endTime: endTime ? new Date(endTime) : undefined,
       },
     });
     res.json(updatedTask);
