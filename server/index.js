@@ -61,6 +61,13 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+const authenticateAdmin = (req, res, next) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Acceso denegado. Se requiere rol de administrador.' });
+  }
+  next();
+};
+
 // =============== AUTH ===============
 app.post('/api/auth/register', async (req, res) => {
   const { name, email, password } = req.body;
@@ -189,6 +196,49 @@ app.put('/api/users/profile', authenticateToken, async (req, res) => {
        return res.status(409).json({ error: 'El email ya está en uso.' });
     }
     res.status(500).json({ error: 'Error al actualizar el perfil' });
+  }
+});
+
+// =============== ADMIN ===============
+app.post('/api/admin/users', authenticateToken, authenticateAdmin, async (req, res) => {
+  const { name, email, password, role } = req.body;
+  
+  if (!name || !email || !password || !role) {
+    return res.status(400).json({ error: 'Faltan campos obligatorios (nombre, email, contraseña, rol).' });
+  }
+
+  if (role !== 'admin' && role !== 'user') {
+    return res.status(400).json({ error: 'El rol debe ser "admin" o "user".' });
+  }
+
+  const emailNorm = email.toLowerCase();
+
+  try {
+    const existingUser = await prisma.user.findUnique({
+      where: { email: emailNorm },
+    });
+
+    if (existingUser) {
+      return res.status(409).json({ error: 'El email ya está en uso.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email: emailNorm,
+        password: hashedPassword,
+        role: role,
+      },
+    });
+
+    const { password: _, ...safeUser } = newUser;
+    res.status(201).json(safeUser);
+
+  } catch (error) {
+    console.error('Admin create user error:', error);
+    res.status(500).json({ error: 'Error al crear el usuario.' });
   }
 });
 

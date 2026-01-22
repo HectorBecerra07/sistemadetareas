@@ -50,6 +50,11 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
           icon: <AdminPanelSettingsIcon />,
           path: '/admin/tasks',
         },
+        {
+          text: 'Gestión de Usuarios',
+          icon: <GroupIcon />,
+          path: '/admin/users',
+        },
       ]
     : [];
 

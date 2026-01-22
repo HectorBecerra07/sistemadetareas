@@ -11,12 +11,13 @@ import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
 import AdminTasksPage from './pages/AdminTasksPage';
 import ProfilePage from './pages/ProfilePage';
+import AdminUsersPage from './pages/AdminUsersPage';
 import { useUser } from './context/UserContext';
 
 const ProtectedRoutes = () => {
   const { currentUser, loading } = useUser();
 
-  if (loading) return null; // ya tienes loaders en las páginas
+  if (loading) return null;
 
   if (!currentUser) return <Navigate to="/login" replace />;
 
@@ -25,6 +26,15 @@ const ProtectedRoutes = () => {
       <Outlet />
     </AppLayout>
   );
+};
+
+const AdminRoutes = () => {
+  const { currentUser } = useUser();
+  // This component assumes it's used within ProtectedRoutes, so currentUser is available.
+  if (currentUser?.role !== 'admin') {
+    return <Navigate to="/" replace />;
+  }
+  return <Outlet />;
 };
 
 const App = () => {
@@ -43,7 +53,11 @@ const App = () => {
           <Route path="/calendar/general" element={<GeneralCalendarPage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/admin/tasks" element={<AdminTasksPage />} />
+          
+          <Route element={<AdminRoutes />}>
+            <Route path="/admin/tasks" element={<AdminTasksPage />} />
+            <Route path="/admin/users" element={<AdminUsersPage />} />
+          </Route>
         </Route>
 
         {/* fallback */}

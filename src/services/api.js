@@ -73,6 +73,14 @@ export const updateUserProfile = (profileData) =>
     body: JSON.stringify(profileData),
   });
 
+// ============ ADMIN ===============
+
+export const adminCreateUser = (userData) =>
+  apiFetch('/admin/users', {
+    method: 'POST',
+    body: JSON.stringify(userData),
+  });
+
 // ============ TASKS ============
 
 export const fetchTasks = () => apiFetch('/tasks');
