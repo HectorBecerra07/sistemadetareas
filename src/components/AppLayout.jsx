@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useTheme, useMediaQuery } from '@mui/material';
 import Box from '@mui/material/Box';
 import AppBar from '@mui/material/AppBar';
@@ -14,6 +15,9 @@ const AppLayout = ({ children }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
+
+  const isMessagesPage = location.pathname === '/messages';
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -61,10 +65,11 @@ const AppLayout = ({ children }) => {
       <Box
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: isMessagesPage ? 0 : 3, // No padding on messages page
           width: '100%',
           mt: { xs: '56px', sm: '64px' },
-          overflow: 'auto',
+          overflow: isMessagesPage ? 'hidden' : 'auto', // Hide overflow on messages
+          height: isMessagesPage ? 'calc(100vh - 64px)' : 'auto', // Full height for messages
         }}
       >
         {children} {/* Renders the page component (e.g., TasksPage) via Outlet */}
