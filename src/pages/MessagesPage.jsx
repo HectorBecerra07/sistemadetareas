@@ -114,24 +114,45 @@ const MessagesPage = () => {
   }
 
   const conversationList = (
-    <List sx={{ p: 0 }}>
-      {getConversations().map(({ user, lastMessage }) => (
-        <ListItemButton
-          key={user.id}
-          selected={selectedUserId === user.id}
-          onClick={() => handleSelectUser(user.id)}
-        >
-          <ListItemAvatar>
-            <Avatar>{user.name[0]}</Avatar>
-          </ListItemAvatar>
-          <ListItemText
-            primary={user.name}
-            secondary={lastMessage?.text || 'No hay mensajes aún.'}
-            secondaryTypographyProps={{ noWrap: true }}
-          />
-        </ListItemButton>
-      ))}
-    </List>
+    <Box sx={{ overflowY: 'auto', height: '100%' }}>
+      <Typography variant="h6" sx={{ p: 2, pb: 1 }}>Conversations</Typography>
+      <List sx={{ p: '0 8px' }}>
+        {getConversations().map(({ user, lastMessage }) => (
+          <ListItemButton
+            key={user.id}
+            selected={selectedUserId === user.id}
+            onClick={() => handleSelectUser(user.id)}
+            sx={{ 
+              borderRadius: 1.5, 
+              mb: 0.5,
+              '&.Mui-selected': {
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                '&:hover': {
+                  bgcolor: 'primary.dark',
+                }
+              },
+               '& .MuiListItemText-secondary': {
+                color: selectedUserId === user.id ? 'primary.contrastText' : 'text.secondary',
+                opacity: selectedUserId === user.id ? 0.8 : 1,
+              }
+            }}
+          >
+            <ListItemAvatar>
+              <Avatar sx={{ bgcolor: selectedUserId === user.id ? 'white' : 'primary.main', color: selectedUserId === user.id ? 'primary.main' : 'white' }}>
+                {user.name[0]}
+              </Avatar>
+            </ListItemAvatar>
+            <ListItemText
+              primary={user.name}
+              secondary={lastMessage?.text || 'No messages yet.'}
+              primaryTypographyProps={{ fontWeight: 'medium' }}
+              secondaryTypographyProps={{ noWrap: true, fontSize: '0.8rem' }}
+            />
+          </ListItemButton>
+        ))}
+      </List>
+    </Box>
   );
 
   const selectedUser = users.find(u => u.id === selectedUserId);
@@ -143,37 +164,60 @@ const MessagesPage = () => {
   const chatWindow = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.default' }}>
       {/* Chat Header */}
-      <Paper sx={{ p: 1.5, display: 'flex', alignItems: 'center', gap: 1.5, borderBottom: 1, borderColor: 'divider' }}>
+      <Paper 
+        square 
+        elevation={0} 
+        sx={{ 
+          p: 2, 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 1.5, 
+          borderBottom: 1, 
+          borderColor: 'divider',
+          bgcolor: 'white'
+        }}
+      >
         {isMobile && (
-          <IconButton onClick={() => setSelectedUserId(null)}>
+          <IconButton onClick={() => setSelectedUserId(null)} sx={{ mr: 1 }}>
             <ArrowBackIcon />
           </IconButton>
         )}
-        <Avatar>{selectedUser?.name?.[0]}</Avatar>
-        <Typography variant="h6">{selectedUser?.name}</Typography>
+        <Avatar sx={{ bgcolor: 'primary.light' }}>{selectedUser?.name?.[0]}</Avatar>
+        <Typography variant="h6" fontWeight="bold">{selectedUser?.name}</Typography>
       </Paper>
       
       {/* Messages Area */}
-      <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 2 }}>
-        {filteredMessages.map((msg, index) => {
+      <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 3, bgcolor: 'grey.50' }}>
+        {filteredMessages.map((msg) => {
           const isMe = msg.from_user_id === currentUser.id;
           return (
-            <Box key={index} sx={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', mb: 1.5 }}>
-              <Paper
-                elevation={2}
-                sx={{
-                  p: 1.5,
-                  borderRadius: isMe ? '20px 20px 5px 20px' : '20px 20px 20px 5px',
-                  bgcolor: isMe ? 'primary.main' : 'background.paper',
-                  color: isMe ? 'primary.contrastText' : 'text.primary',
-                  maxWidth: '70%',
-                }}
-              >
-                <Typography variant="body1">{msg.text}</Typography>
-                 <Typography variant="caption" sx={{ display: 'block', textAlign: 'right', opacity: 0.7, mt: 0.5 }}>
-                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            <Box 
+              key={msg.id} 
+              sx={{ 
+                display: 'flex', 
+                justifyContent: isMe ? 'flex-end' : 'flex-start', 
+                mb: 2,
+              }}
+            >
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: '10px 14px',
+                    borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                    bgcolor: isMe ? 'primary.main' : 'white',
+                    color: isMe ? 'white' : 'text.primary',
+                    maxWidth: '400px',
+                    border: isMe ? 0 : 1,
+                    borderColor: 'grey.300'
+                  }}
+                >
+                  <Typography variant="body1">{msg.text}</Typography>
+                </Paper>
+                <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, px: 1 }}>
+                  {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </Typography>
-              </Paper>
+              </Box>
             </Box>
           );
         })}
@@ -181,18 +225,34 @@ const MessagesPage = () => {
       </Box>
 
       {/* Message Input */}
-      <Box sx={{ p: 1.5, borderTop: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box sx={{ p: 2, bgcolor: 'white', borderTop: 1, borderColor: 'divider' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'grey.100', borderRadius: 2, p: '4px' }}>
           <TextField
             fullWidth
-            variant="outlined"
+            variant="filled"
             size="small"
             placeholder="Escribe un mensaje..."
             value={messageText}
             onChange={e => setMessageText(e.target.value)}
             onKeyPress={e => e.key === 'Enter' && handleSendMessage()}
+            sx={{
+              '& .MuiFilledInput-root': {
+                backgroundColor: 'transparent',
+                '&:hover, &.Mui-focused': {
+                  backgroundColor: 'transparent',
+                },
+              },
+              '& .MuiFilledInput-underline:before, & .MuiFilledInput-underline:after': {
+                display: 'none',
+              },
+            }}
           />
-          <IconButton color="primary" onClick={handleSendMessage} disabled={!messageText.trim()}>
+          <IconButton 
+            color="primary" 
+            onClick={handleSendMessage} 
+            disabled={!messageText.trim()}
+            sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' }, mr: '4px' }}
+          >
             <SendIcon />
           </IconButton>
         </Box>
@@ -201,12 +261,27 @@ const MessagesPage = () => {
   );
 
   return (
-    <Box>
-       <Typography variant="h5" gutterBottom>
+    <Box sx={{
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
+      <Typography variant="h4" sx={{ p: 2, pb: 0 }}>
         Mensajería
       </Typography>
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      <Paper sx={{ height: 'calc(100vh - 64px - 48px - 48px)', display: 'flex', borderRadius: 2, overflow: 'hidden' }}>
+      {error && <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>}
+      <Paper 
+        elevation={0}
+        sx={{ 
+          flexGrow: 1, 
+          display: 'flex', 
+          m: 2, 
+          mt: 1,
+          borderRadius: 2, 
+          overflow: 'hidden',
+          bgcolor: 'white'
+        }}
+      >
         <Grid container sx={{ height: '100%' }}>
           {/* Conversation List */}
           <Grid
@@ -217,8 +292,8 @@ const MessagesPage = () => {
               height: '100%',
               borderRight: { md: 1 },
               borderColor: { md: 'divider' },
-              display: isMobile && selectedUserId ? 'none' : 'block',
-              overflowY: 'auto'
+              display: isMobile && selectedUserId ? 'none' : 'flex',
+              flexDirection: 'column',
             }}
           >
             {conversationList}
@@ -231,6 +306,7 @@ const MessagesPage = () => {
             sx={{
               height: '100%',
               display: isMobile && !selectedUserId ? 'none' : 'flex',
+              flexDirection: 'column'
             }}
           >
             {selectedUser ? (
