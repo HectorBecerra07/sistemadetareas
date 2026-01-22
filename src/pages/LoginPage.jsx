@@ -41,8 +41,12 @@ const LoginPage = () => {
 
     try {
       setSubmitting(true);
-      await login(email, password);
-      navigate('/');
+      const user = await login(email, password); // Get the user object
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       setError(err.message || 'Error al iniciar sesión');
     } finally {

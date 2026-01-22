@@ -79,8 +79,7 @@ const CalendarPage = () => {
                                     second: moment(task.endTime).second(),
                                 }).toDate()
                                 : new Date(task.dueDate),
-                        allDay: !(task.startTime && task.endTime),
-                        resource: { completed: task.completed, description: task.description || '', priority: task.priority },
+                        resource: { completed: task.completed, description: task.description || '', priority: task.priority, completedAt: task.completedAt },
                     }));
                 setEvents(mappedEvents);
                 setError(null);
@@ -100,8 +99,14 @@ const CalendarPage = () => {
         let borderColor = 'transparent';
 
         if (isCompleted) {
-            backgroundColor = 'linear-gradient(135deg, #66bb6a, #388e3c)'; // Completed (Darker Green)
-            borderColor = '#2e7d32'; // Dark green border
+            const isLateCompletion = moment(event.resource.completedAt).isAfter(moment(event.start), 'day');
+            if (isLateCompletion) {
+                backgroundColor = 'linear-gradient(135deg, #ffc107, #ff9800)'; // Late Completed (Orange)
+                borderColor = '#f57c00'; // Dark orange border
+            } else {
+                backgroundColor = 'linear-gradient(135deg, #66bb6a, #388e3c)'; // Completed On Time (Darker Green)
+                borderColor = '#2e7d32'; // Dark green border
+            }
         } else {
             switch (priority) {
                 case 'baja':
@@ -218,6 +223,7 @@ const CalendarPage = () => {
             >
               <Typography variant="subtitle1">Leyenda:</Typography>
               <Chip label="Completada" sx={{ bgcolor: '#66bb6a', color: 'white', fontWeight: 500 }} />
+              <Chip label="Completada con Retraso" sx={{ bgcolor: '#ff9800', color: 'white', fontWeight: 500 }} />
               <Chip label="Prioridad Baja" sx={{ bgcolor: '#2196f3', color: 'white', fontWeight: 500 }} />
               <Chip label="Prioridad Media" sx={{ bgcolor: '#fbc02d', color: 'white', fontWeight: 500 }} />
               <Chip label="Prioridad Alta" sx={{ bgcolor: '#d32f2f', color: 'white', fontWeight: 500 }} />
@@ -310,7 +316,54 @@ const CalendarPage = () => {
                 </DialogContent>
                 <DialogActions>
                   <Button onClick={() => setSelectedEvent(null)}>Cerrar</Button>
-                  <Button onClick={() => { setEditEventData(selectedEvent); setSelectedEvent(null); }}>Editar</Button>
+                  {!selectedEvent.resource.completed && (
+                    <Button 
+                      onClick={async () => {
+                        if (!selectedEvent) return;
+                        try {
+                            await updateTask(selectedEvent.id, { completed: true });
+                            // Refetch events
+                            const userTasks = await fetchTasks();
+                            const mappedEvents = userTasks
+                                .filter(task => task.dueDate)
+                                .map(task => ({
+                                    id: task.id,
+                                    title: task.title,
+                                    start: task.startTime && task.dueDate
+                                            ? moment(task.dueDate).set({
+                                                hour: moment(task.startTime).hour(),
+                                                minute: moment(task.startTime).minute(),
+                                                second: moment(task.startTime).second(),
+                                            }).toDate()
+                                            : new Date(task.dueDate),
+                                    end: task.endTime && task.dueDate
+                                            ? moment(task.dueDate).set({
+                                                hour: moment(task.endTime).hour(),
+                                                minute: moment(task.endTime).minute(),
+                                                second: moment(task.endTime).second(),
+                                            }).toDate()
+                                            : new Date(task.dueDate),
+                                    allDay: !(task.startTime && task.endTime),
+                                    resource: { completed: task.completed, description: task.description || '', priority: task.priority },
+                                }));
+                            setEvents(mappedEvents);
+                            setSelectedEvent(null);
+                        } catch (err) {
+                            setError('No se pudo marcar la tarea como completada.');
+                        }
+                      }}
+                      variant="contained"
+                      color="success"
+                    >
+                      Marcar como Completada
+                    </Button>
+                  )}
+                  <Button 
+                    onClick={() => { setEditEventData(selectedEvent); setSelectedEvent(null); }}
+                    disabled={moment(selectedEvent.start).isBefore(moment(), 'day')} // Disable if task is in the past
+                  >
+                    Editar
+                  </Button>
                   <Button 
                     onClick={async () => {
                       if (!selectedEvent) return;

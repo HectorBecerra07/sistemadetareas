@@ -37,7 +37,7 @@ export const UserProvider = ({ children }) => {
   const login = async (email, password) => {
     const data = await loginUser({ email, password });
     setCurrentUser(data.user);
-    // La lista de usuarios se recargará en el useEffect
+    return data.user; // Return the user object
   };
 
   const register = async (name, email, password) => {

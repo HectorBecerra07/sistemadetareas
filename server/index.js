@@ -1,4 +1,5 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config({ path: './.env' }); // Assuming the .env file is in the server directory
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
@@ -6,6 +7,9 @@ import jwt from 'jsonwebtoken';
 import prisma from './lib/prisma.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
+console.log('DATABASE_URL:', process.env.DATABASE_URL); // Debugging line
+console.log('POSTGRES_URL:', process.env.POSTGRES_URL); // Debugging line
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -27,7 +31,6 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: (origin, callback) => {
-    console.log("CORS Origin Check:", origin); // Add this for debugging
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -100,17 +103,20 @@ app.post('/api/auth/login', async (req, res) => {
   }
 
   const emailNorm = email.toLowerCase();
+  console.log('Login attempt for:', emailNorm); // Debugging line
 
   try {
     const user = await prisma.user.findUnique({
       where: { email: emailNorm },
     });
+    console.log('User found from DB:', user); // Debugging line
 
     if (!user) {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
     const isValid = await bcrypt.compare(password, user.password);
+    console.log('Password comparison result:', isValid); // Debugging line
 
     if (!isValid) {
       return res.status(401).json({ error: 'Credenciales inválidas' });
@@ -245,6 +251,7 @@ app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
         priority,
         startTime: startTime ? new Date(startTime) : undefined,
         endTime: endTime ? new Date(endTime) : undefined,
+        completedAt: completed === true ? new Date() : completed === false ? null : undefined,
       },
     });
     res.json(updatedTask);

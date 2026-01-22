@@ -20,17 +20,13 @@ const EventFormModal = ({ open, handleClose, handleCreateEvent, handleUpdateEven
   const [errors, setErrors] = useState({});
 
   const isEditing = Boolean(initialEventData);
+  const isPastTask = isEditing && moment(initialEventData.start).isBefore(moment(), 'day');
 
   useEffect(() => {
     if (open) {
       if (isEditing) {
         setTitle(initialEventData.title);
         setPriority(initialEventData.resource.priority || 'media');
-        console.log("Initial Event Data Start:", initialEventData.start);
-        console.log("Initial Event Data End:", initialEventData.end);
-        console.log("Formatted Start Time:", initialEventData.start && !initialEventData.allDay ? moment(initialEventData.start).format('HH:mm') : '');
-        console.log("Formatted End Time:", initialEventData.end && !initialEventData.allDay ? moment(initialEventData.end).format('HH:mm') : '');
-        // Format start/end times if they exist
         setStartTime(initialEventData.start && !initialEventData.allDay ? moment(initialEventData.start).format('HH:mm') : '');
         setEndTime(initialEventData.end && !initialEventData.allDay ? moment(initialEventData.end).format('HH:mm') : '');
       } else {
@@ -107,6 +103,7 @@ const EventFormModal = ({ open, handleClose, handleCreateEvent, handleUpdateEven
           error={Boolean(errors.title)}
           helperText={errors.title}
           autoFocus
+          disabled={isPastTask}
         />
 
         <TextField
@@ -119,6 +116,7 @@ const EventFormModal = ({ open, handleClose, handleCreateEvent, handleUpdateEven
           onChange={(e) => setStartTime(e.target.value)}
           error={Boolean(errors.time)}
           helperText={errors.time}
+          disabled={isPastTask}
         />
 
         <TextField
@@ -131,6 +129,7 @@ const EventFormModal = ({ open, handleClose, handleCreateEvent, handleUpdateEven
           onChange={(e) => setEndTime(e.target.value)}
           error={Boolean(errors.time)}
           helperText={errors.time}
+          disabled={isPastTask}
         />
 
         <FormControl fullWidth margin="normal">
@@ -140,6 +139,7 @@ const EventFormModal = ({ open, handleClose, handleCreateEvent, handleUpdateEven
             value={priority}
             label="Prioridad"
             onChange={(e) => setPriority(e.target.value)}
+            disabled={isPastTask}
           >
             <MenuItem value="baja">Baja</MenuItem>
             <MenuItem value="media">Media</MenuItem>
@@ -151,7 +151,7 @@ const EventFormModal = ({ open, handleClose, handleCreateEvent, handleUpdateEven
           <Button onClick={handleClose} sx={{ mr: 1 }}>
             Cancelar
           </Button>
-          <Button variant="contained" onClick={handleSubmit}>
+          <Button variant="contained" onClick={handleSubmit} disabled={isPastTask}>
             {isEditing ? 'Guardar Cambios' : 'Crear'}
           </Button>
         </Box>

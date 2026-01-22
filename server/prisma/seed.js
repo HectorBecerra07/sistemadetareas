@@ -8,6 +8,24 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Start seeding ...');
 
+  // Create default admin user
+  const adminPassword = await bcrypt.hash('admin123', 10);
+  await prisma.user.upsert({
+    where: { email: 'CEO@darmaxagua.mx' },
+    update: {
+      name: 'Admin',
+      password: adminPassword,
+      role: 'admin',
+    },
+    create: {
+      name: 'Admin',
+      email: 'CEO@darmaxagua.mx',
+      password: adminPassword,
+      role: 'admin',
+    },
+  });
+  console.log('Admin user seeded (CEO@darmaxagua.mx / admin123). Please change the password immediately.');
+
   // Seed users
   for (const user of mockUsers) {
     const salt = await bcrypt.genSalt(10);
