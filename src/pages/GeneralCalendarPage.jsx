@@ -5,7 +5,7 @@ import 'moment/locale/es';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 import { useUser } from '../context/UserContext';
-import { fetchTasks } from '../services/api';
+import { fetchAdminTasks } from '../services/api';
 
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
@@ -64,7 +64,7 @@ const GeneralCalendarPage = () => {
     const loadAllTasks = async () => {
       try {
         setLoading(true);
-        const allTasks = await fetchTasks();
+        const allTasks = await fetchAdminTasks();
 
         const mappedEvents = allTasks.map(task => {
           const user = users.find(u => u.id === task.userId);
