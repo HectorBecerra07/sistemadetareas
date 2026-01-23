@@ -81,6 +81,27 @@ export const adminCreateUser = (userData) =>
     body: JSON.stringify(userData),
   });
 
+// ============ ADMIN TASKS ===============
+
+export const fetchAdminTasks = () => apiFetch('/admin/tasks');
+
+export const createAdminTask = (task) =>
+  apiFetch('/admin/tasks', {
+    method: 'POST',
+    body: JSON.stringify(task),
+  });
+
+export const updateAdminTask = (id, data) =>
+  apiFetch(`/admin/tasks/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+
+export const deleteAdminTask = (id) =>
+  apiFetch(`/admin/tasks/${id}`, {
+    method: 'DELETE',
+  });
+
 // ============ TASKS ============
 
 export const fetchTasks = () => apiFetch('/tasks');

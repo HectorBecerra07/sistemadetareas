@@ -242,6 +242,86 @@ app.post('/api/admin/users', authenticateToken, authenticateAdmin, async (req, r
   }
 });
 
+// =============== ADMIN TASKS ===============
+app.get('/api/admin/tasks', authenticateToken, authenticateAdmin, async (req, res) => {
+  try {
+    const tasks = await prisma.task.findMany();
+    res.json(tasks);
+  } catch (error) {
+    console.error("Error fetching admin tasks:", error);
+    res.status(500).json({ error: 'Error al obtener todas las tareas' });
+  }
+});
+
+app.post('/api/admin/tasks', authenticateToken, authenticateAdmin, async (req, res) => {
+  const { title, dueDate, userId, priority, startTime, endTime } = req.body;
+  if (!title || !userId) {
+    return res.status(400).json({ error: 'Faltan campos obligatorios (título, userId)' });
+  }
+
+  try {
+    const task = await prisma.task.create({
+      data: {
+        title,
+        dueDate: dueDate ? new Date(dueDate) : null,
+        userId: parseInt(userId, 10),
+        priority: priority,
+        startTime: startTime ? new Date(startTime) : null,
+        endTime: endTime ? new Date(endTime) : null,
+      },
+    });
+    res.status(201).json(task);
+  } catch (error) {
+    console.error('Admin create task error:', error);
+    res.status(500).json({ error: 'Error al crear la tarea' });
+  }
+});
+
+app.put('/api/admin/tasks/:id', authenticateToken, authenticateAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { title, dueDate, completed, userId, priority, startTime, endTime } = req.body;
+
+  try {
+    const updatedTask = await prisma.task.update({
+      where: { id: parseInt(id, 10) },
+      data: {
+        title,
+        dueDate: dueDate ? new Date(dueDate) : undefined,
+        completed,
+        userId: userId ? parseInt(userId, 10) : undefined,
+        priority,
+        startTime: startTime ? new Date(startTime) : undefined,
+        endTime: endTime ? new Date(endTime) : undefined,
+        completedAt: completed === true ? new Date() : (completed === false ? null : undefined),
+      },
+    });
+    res.json(updatedTask);
+  } catch (error) {
+    if (error?.code === 'P2025') {
+      return res.status(404).json({ error: 'Tarea no encontrada' });
+    }
+    console.error('Admin update task error:', error);
+    res.status(500).json({ error: 'Error al actualizar la tarea' });
+  }
+});
+
+app.delete('/api/admin/tasks/:id', authenticateToken, authenticateAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        await prisma.task.delete({
+            where: { id: parseInt(id, 10) },
+        });
+        res.status(204).send();
+    } catch (error) {
+        if (error?.code === 'P2025') {
+            return res.status(404).json({ error: 'Tarea no encontrada' });
+        }
+        console.error('Admin delete task error:', error);
+        res.status(500).json({ error: 'Error al borrar la tarea' });
+    }
+});
+
+
 // =============== TASKS ===============
 app.get('/api/tasks', authenticateToken, async (req, res) => {
   try {

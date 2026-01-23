@@ -24,9 +24,16 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import SaveIcon from '@mui/icons-material/Save';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
 
 import { useUser } from '../context/UserContext';
-import { fetchTasks, fetchUsers, updateTask, deleteTask, createTask } from '../services/api';
+import { 
+  fetchUsers, 
+  fetchAdminTasks,
+  createAdminTask,
+  updateAdminTask,
+  deleteAdminTask
+} from '../services/api';
 import CreateTaskModal from '../components/CreateTaskModal';
 
 const AdminTasksPage = () => {
@@ -46,7 +53,7 @@ const AdminTasksPage = () => {
       try {
         setLoading(true);
         const [tasksRes, usersRes] = await Promise.all([
-          fetchTasks(),
+          fetchAdminTasks(),
           fetchUsers(),
         ]);
         setTasks(tasksRes);
@@ -77,8 +84,8 @@ const AdminTasksPage = () => {
   };
 
   const handleSave = async (id) => {
-    const original = tasks.find((t) => t.id === id);
-    if (!original) return;
+    const originalTask = tasks.find((t) => t.id === id);
+    if (!originalTask) return;
 
     const updatedData = {
       title: draft.title,
@@ -88,9 +95,13 @@ const AdminTasksPage = () => {
     };
 
     try {
-      const updatedTask = await updateTask(id, updatedData);
+      const taskFromApi = await updateAdminTask(id, updatedData);
+      // Ensure client state is consistent by merging the API response
+      // with the data sent, giving precedence to the draft data.
+      const updatedTask = { ...originalTask, ...taskFromApi, ...updatedData };
+
       setTasks((prev) =>
-        prev.map((t) => (t.id === id ? { ...original, ...updatedTask } : t))
+        prev.map((t) => (t.id === id ? updatedTask : t))
       );
       setEditingId(null);
       setDraft({});
@@ -103,7 +114,7 @@ const AdminTasksPage = () => {
 
   const handleDelete = async (id) => {
     try {
-      await deleteTask(id);
+      await deleteAdminTask(id);
       setTasks((prev) => prev.filter((t) => t.id !== id));
       setError(null);
     } catch (err) {
@@ -114,8 +125,11 @@ const AdminTasksPage = () => {
   
   const handleAddTask = async (newTaskData) => {
     try {
-      const newlyCreatedTask = await createTask(newTaskData);
-      setTasks((prevTasks) => [...prevTasks, newlyCreatedTask]);
+      const createdTaskFromApi = await createAdminTask(newTaskData);
+      // Ensure the client-side state is consistent by merging the API response
+      // with the data sent, giving precedence to the data from the form.
+      const newCompleteTask = { ...createdTaskFromApi, ...newTaskData };
+      setTasks((prevTasks) => [...prevTasks, newCompleteTask]);
       setError(null);
     } catch (err) {
       console.error(err);
@@ -274,7 +288,7 @@ const AdminTasksPage = () => {
                         </Tooltip>
                         <Tooltip title="Cancelar">
                            <IconButton size="small" onClick={() => setEditingId(null)}>
-                                <EditIcon fontSize="small" />
+                                <CloseIcon fontSize="small" />
                            </IconButton>
                         </Tooltip>
                       </>
