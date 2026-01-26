@@ -11,20 +11,16 @@ import {
   TableBody,
   TableContainer,
   IconButton,
-  TextField,
-  Select,
-  MenuItem,
-  Checkbox,
   Tooltip,
   Alert,
   CircularProgress,
   Button,
+  Chip,
+  Stack,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import SaveIcon from '@mui/icons-material/Save';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
-import CloseIcon from '@mui/icons-material/Close';
 
 import { useUser } from '../context/UserContext';
 import { 
@@ -34,21 +30,24 @@ import {
   updateAdminTask,
   deleteAdminTask
 } from '../services/api';
-import CreateTaskModal from '../components/CreateTaskModal';
+import TaskFormModal from '../components/TaskFormModal';
 
 const AdminTasksPage = () => {
   const { currentUser } = useUser();
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
-  const [editingId, setEditingId] = useState(null);
-  const [draft, setDraft] = useState({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
 
   const isAdmin = currentUser?.role === 'admin';
 
   useEffect(() => {
+    if (!isAdmin) {
+        setLoading(false);
+        return;
+    };
     const loadData = async () => {
       try {
         setLoading(true);
@@ -67,50 +66,43 @@ const AdminTasksPage = () => {
       }
     };
     loadData();
-  }, []);
+  }, [isAdmin]);
 
-  const handleStartEdit = (task) => {
-    setEditingId(task.id);
-    setDraft({
-      title: task.title,
-      dueDate: task.dueDate ? task.dueDate.slice(0, 10) : '',
-      userId: task.userId,
-      completed: task.completed,
-    });
+  const handleOpenCreateModal = () => {
+    setSelectedTask(null);
+    setIsModalOpen(true);
   };
 
-  const handleDraftChange = (field, value) => {
-    setDraft((prev) => ({ ...prev, [field]: value }));
+  const handleOpenEditModal = (task) => {
+    setSelectedTask(task);
+    setIsModalOpen(true);
   };
 
-  const handleSave = async (id) => {
-    const originalTask = tasks.find((t) => t.id === id);
-    if (!originalTask) return;
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedTask(null);
+  };
 
-    const updatedData = {
-      title: draft.title,
-      dueDate: draft.dueDate ? new Date(draft.dueDate).toISOString() : null,
-      userId: draft.userId,
-      completed: draft.completed,
-    };
-
+  const handleSaveTask = async (taskData, taskId) => {
     try {
-      const taskFromApi = await updateAdminTask(id, updatedData);
-      // Ensure client state is consistent by merging the API response
-      // with the data sent, giving precedence to the draft data.
-      const updatedTask = { ...originalTask, ...taskFromApi, ...updatedData };
-
-      setTasks((prev) =>
-        prev.map((t) => (t.id === id ? updatedTask : t))
-      );
-      setEditingId(null);
-      setDraft({});
+      if (taskId) {
+        // Update logic for Admin
+        const updatedTask = await updateAdminTask(taskId, taskData);
+        setTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? updatedTask : t))
+        );
+      } else {
+        // Create logic for Admin
+        const newTask = await createAdminTask(taskData);
+        setTasks((prev) => [...prev, newTask]);
+      }
       setError(null);
     } catch (err) {
       console.error(err);
       setError('Error al guardar la tarea.');
     }
   };
+
 
   const handleDelete = async (id) => {
     try {
@@ -120,20 +112,6 @@ const AdminTasksPage = () => {
     } catch (err) {
       console.error(err);
       setError('Error al eliminar la tarea.');
-    }
-  };
-  
-  const handleAddTask = async (newTaskData) => {
-    try {
-      const createdTaskFromApi = await createAdminTask(newTaskData);
-      // Ensure the client-side state is consistent by merging the API response
-      // with the data sent, giving precedence to the data from the form.
-      const newCompleteTask = { ...createdTaskFromApi, ...newTaskData };
-      setTasks((prevTasks) => [...prevTasks, newCompleteTask]);
-      setError(null);
-    } catch (err) {
-      console.error(err);
-      setError('Error al crear la tarea.');
     }
   };
 
@@ -155,8 +133,7 @@ const AdminTasksPage = () => {
     );
   }
 
-  const getUserName = (userId) =>
-    users.find((u) => u.id === userId)?.name || 'Desconocido';
+  const getUser = (userId) => users.find((u) => u.id === userId);
 
   return (
     <Box>
@@ -178,7 +155,7 @@ const AdminTasksPage = () => {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => setModalOpen(true)}
+          onClick={handleOpenCreateModal}
         >
           Crear Tarea
         </Button>
@@ -192,125 +169,45 @@ const AdminTasksPage = () => {
               <TableCell>Usuario</TableCell>
               <TableCell>Título</TableCell>
               <TableCell>Fecha límite</TableCell>
-              <TableCell>Completada</TableCell>
+              <TableCell>Prioridad</TableCell>
+              <TableCell>Estado</TableCell>
               <TableCell align="right">Acciones</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {tasks.map((task) => {
-              const isEditing = editingId === task.id;
-
+              const user = getUser(task.userId);
               return (
                 <TableRow key={task.id}>
-                  {/* Usuario asignado */}
-                  <TableCell sx={{ minWidth: 140 }}>
-                    {isEditing ? (
-                      <Select
-                        size="small"
-                        value={draft.userId}
-                        onChange={(e) =>
-                          handleDraftChange('userId', e.target.value)
-                        }
-                        fullWidth
-                      >
-                        {users.map((u) => (
-                          <MenuItem key={u.id} value={u.id}>
-                            {u.name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    ) : (
-                      getUserName(task.userId)
-                    )}
-                  </TableCell>
-
-                  {/* Título */}
-                  <TableCell sx={{ minWidth: 200 }}>
-                    {isEditing ? (
-                      <TextField
-                        size="small"
-                        fullWidth
-                        value={draft.title}
-                        onChange={(e) =>
-                          handleDraftChange('title', e.target.value)
-                        }
-                      />
-                    ) : (
-                      task.title
-                    )}
-                  </TableCell>
-
-                  {/* Fecha límite */}
-                  <TableCell sx={{ minWidth: 140 }}>
-                    {isEditing ? (
-                      <TextField
-                        size="small"
-                        type="date"
-                        value={draft.dueDate}
-                        onChange={(e) =>
-                          handleDraftChange('dueDate', e.target.value)
-                        }
-                        InputLabelProps={{ shrink: true }}
-                      />
-                    ) : task.dueDate ? (
-                      new Date(task.dueDate).toLocaleDateString()
-                    ) : (
-                      'Sin fecha'
-                    )}
-                  </TableCell>
-
-                  {/* Completada */}
                   <TableCell>
-                    {isEditing ? (
-                      <Checkbox
-                        checked={draft.completed}
-                        onChange={(e) =>
-                          handleDraftChange('completed', e.target.checked)
-                        }
-                      />
-                    ) : (
-                      <Checkbox checked={task.completed} disabled />
-                    )}
+                    <Typography variant="body2">{user?.name || 'N/A'}</Typography>
+                    <Typography variant="caption" color="text.secondary">{user?.email || ''}</Typography>
                   </TableCell>
-
-                  {/* Acciones */}
-                  <TableCell align="right">
-                    {isEditing ? (
-                      <>
-                        <Tooltip title="Guardar cambios">
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={() => handleSave(task.id)}
-                          >
-                            <SaveIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Cancelar">
-                           <IconButton size="small" onClick={() => setEditingId(null)}>
-                                <CloseIcon fontSize="small" />
-                           </IconButton>
-                        </Tooltip>
-                      </>
-                    ) : (
-                      <Tooltip title="Editar tarea">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleStartEdit(task)}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                    <Tooltip title="Eliminar tarea">
-                      <IconButton
+                  <TableCell>{task.title}</TableCell>
+                  <TableCell>{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'Sin fecha'}</TableCell>
+                  <TableCell>
+                    <Chip 
+                        label={task.priority?.charAt(0).toUpperCase() + task.priority?.slice(1)}
                         size="small"
-                        color="error"
-                        onClick={() => handleDelete(task.id)}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                        color={task.priority === 'alta' ? 'error' : task.priority === 'media' ? 'warning' : 'default'}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Chip label={task.completed ? 'Completada' : 'Pendiente'} size="small" color={task.completed ? 'success' : 'default'} />
+                  </TableCell>
+                  <TableCell align="right">
+                    <Stack direction="row" spacing={1} justifyContent="flex-end">
+                        <Tooltip title="Editar tarea">
+                            <IconButton size="small" onClick={() => handleOpenEditModal(task)}>
+                                <EditIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Eliminar tarea">
+                            <IconButton size="small" color="error" onClick={() => handleDelete(task.id)}>
+                                <DeleteIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    </Stack>
                   </TableCell>
                 </TableRow>
             );
@@ -320,12 +217,15 @@ const AdminTasksPage = () => {
         </TableContainer>
       </Paper>
       
-      <CreateTaskModal
-        open={modalOpen}
-        handleClose={() => setModalOpen(false)}
-        handleAddTask={handleAddTask}
-        users={users}
-      />
+      {isModalOpen && (
+        <TaskFormModal
+            open={isModalOpen}
+            handleClose={handleCloseModal}
+            onSave={handleSaveTask}
+            users={users}
+            initialData={selectedTask}
+        />
+      )}
     </Box>
   );
 };
