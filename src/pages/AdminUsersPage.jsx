@@ -19,9 +19,13 @@ import {
   Alert,
   CircularProgress,
   Chip,
+  IconButton,
+  Tooltip,
+  Stack,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { fetchUsers, adminCreateUser } from '../services/api';
+import EditIcon from '@mui/icons-material/Edit';
+import { fetchUsers, adminCreateUser, adminUpdateUser } from '../services/api';
 
 const modalStyle = {
   position: 'absolute',
@@ -39,12 +43,14 @@ const AdminUsersPage = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   
-  // Form state
   const [formState, setFormState] = useState({ name: '', email: '', password: '', role: 'user' });
   const [formError, setFormError] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
+
+  const isEditing = Boolean(selectedUser);
 
   const loadUsers = async () => {
     try {
@@ -62,9 +68,19 @@ const AdminUsersPage = () => {
     loadUsers();
   }, []);
 
-  const handleOpenModal = () => setModalOpen(true);
+  const handleOpenModal = (user = null) => {
+    setSelectedUser(user);
+    if (user) {
+        setFormState({ name: user.name, email: user.email, password: '', role: user.role });
+    } else {
+        setFormState({ name: '', email: '', password: '', role: 'user' });
+    }
+    setIsModalOpen(true);
+  };
+
   const handleCloseModal = () => {
-    setModalOpen(false);
+    setIsModalOpen(false);
+    setSelectedUser(null);
     setFormState({ name: '', email: '', password: '', role: 'user' });
     setFormError(null);
   };
@@ -78,11 +94,21 @@ const AdminUsersPage = () => {
     setFormLoading(true);
     setFormError(null);
     try {
-      await adminCreateUser(formState);
-      handleCloseModal();
-      loadUsers(); // Refresh user list
+        const dataToSend = { ...formState };
+        // Do not send empty password field unless it is a new user
+        if (isEditing && !dataToSend.password) {
+            delete dataToSend.password;
+        }
+
+        if (isEditing) {
+            await adminUpdateUser(selectedUser.id, dataToSend);
+        } else {
+            await adminCreateUser(dataToSend);
+        }
+        handleCloseModal();
+        loadUsers();
     } catch (err) {
-      setFormError(err.message || 'Error al crear el usuario.');
+      setFormError(err.message || `Error al ${isEditing ? 'actualizar' : 'crear'} el usuario.`);
     } finally {
       setFormLoading(false);
     }
@@ -101,7 +127,7 @@ const AdminUsersPage = () => {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenModal}>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenModal()}>
           Crear Usuario
         </Button>
       </Box>
@@ -114,6 +140,7 @@ const AdminUsersPage = () => {
               <TableCell>Nombre</TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Rol</TableCell>
+              <TableCell align="right">Acciones</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -129,24 +156,31 @@ const AdminUsersPage = () => {
                     size="small"
                   />
                 </TableCell>
+                <TableCell align="right">
+                    <Tooltip title="Editar Usuario">
+                        <IconButton onClick={() => handleOpenModal(user)}>
+                            <EditIcon />
+                        </IconButton>
+                    </Tooltip>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
       
-      {/* Create User Modal */}
-      <Modal open={modalOpen} onClose={handleCloseModal}>
+      {/* Create/Edit User Modal */}
+      <Modal open={isModalOpen} onClose={handleCloseModal}>
         <Box sx={modalStyle} component="form" onSubmit={handleFormSubmit}>
           <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
-            Crear Nuevo Usuario
+            {isEditing ? 'Editar Usuario' : 'Crear Nuevo Usuario'}
           </Typography>
           
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           
           <TextField name="name" label="Nombre" value={formState.name} onChange={handleFormChange} fullWidth required margin="normal" />
           <TextField name="email" label="Correo Electrónico" type="email" value={formState.email} onChange={handleFormChange} fullWidth required margin="normal" />
-          <TextField name="password" label="Contraseña" type="password" value={formState.password} onChange={handleFormChange} fullWidth required margin="normal" />
+          <TextField name="password" label={isEditing ? 'Nueva Contraseña (opcional)' : 'Contraseña'} type="password" value={formState.password} onChange={handleFormChange} fullWidth required={!isEditing} margin="normal" />
           
           <FormControl fullWidth margin="normal">
             <InputLabel>Rol</InputLabel>
@@ -159,7 +193,7 @@ const AdminUsersPage = () => {
           <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
             <Button onClick={handleCloseModal}>Cancelar</Button>
             <Button type="submit" variant="contained" disabled={formLoading}>
-              {formLoading ? <CircularProgress size={24} /> : 'Crear'}
+              {formLoading ? <CircularProgress size={24} /> : (isEditing ? 'Guardar Cambios' : 'Crear')}
             </Button>
           </Box>
         </Box>

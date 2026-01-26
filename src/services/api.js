@@ -81,6 +81,12 @@ export const adminCreateUser = (userData) =>
     body: JSON.stringify(userData),
   });
 
+export const adminUpdateUser = (id, userData) =>
+  apiFetch(`/admin/users/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(userData),
+  });
+
 // ============ ADMIN TASKS ===============
 
 export const fetchAdminTasks = () => apiFetch('/admin/tasks');

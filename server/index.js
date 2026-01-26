@@ -242,6 +242,41 @@ app.post('/api/admin/users', authenticateToken, authenticateAdmin, async (req, r
   }
 });
 
+app.put('/api/admin/users/:id', authenticateToken, authenticateAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { name, email, role, password } = req.body;
+
+    try {
+        const updateData = {
+            name,
+            email: email ? email.toLowerCase() : undefined,
+            role,
+        };
+
+        if (password) {
+            updateData.password = await bcrypt.hash(password, 10);
+        }
+
+        const updatedUser = await prisma.user.update({
+            where: { id: parseInt(id, 10) },
+            data: updateData,
+        });
+
+        const { password: _, ...safeUser } = updatedUser;
+        res.json(safeUser);
+
+    } catch (error) {
+        if (error.code === 'P2002') { // Unique constraint violation (email)
+            return res.status(409).json({ error: 'El email ya está en uso.' });
+        }
+        if (error.code === 'P2025') { // Record to update not found
+            return res.status(404).json({ error: 'Usuario no encontrado.' });
+        }
+        console.error('Admin update user error:', error);
+        res.status(500).json({ error: 'Error al actualizar el usuario.' });
+    }
+});
+
 // =============== ADMIN TASKS ===============
 app.get('/api/admin/tasks', authenticateToken, authenticateAdmin, async (req, res) => {
   try {
