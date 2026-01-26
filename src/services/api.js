@@ -87,6 +87,11 @@ export const adminUpdateUser = (id, userData) =>
     body: JSON.stringify(userData),
   });
 
+export const adminDeleteUser = (id) =>
+  apiFetch(`/admin/users/${id}`, {
+    method: 'DELETE',
+  });
+
 // ============ ADMIN TASKS ===============
 
 export const fetchAdminTasks = () => apiFetch('/admin/tasks');
