@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useUser } from '../context/UserContext';
 import { updateUserProfile } from '../services/api';
 import {
@@ -15,9 +15,11 @@ import {
   CardContent,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 
 const ProfilePage = () => {
   const { currentUser, updateCurrentUser } = useUser();
+  const fileInputRef = useRef(null);
 
   const [formState, setFormState] = useState({
     name: currentUser.name || '',
@@ -27,12 +29,32 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [imagePreview, setImagePreview] = useState(currentUser.avatarUrl || '');
 
   const handleChange = (e) => {
     setFormState({
       ...formState,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+        setFormState((prev) => ({ ...prev, avatarUrl: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setImagePreview(currentUser.avatarUrl || '');
+      setFormState((prev) => ({ ...prev, avatarUrl: currentUser.avatarUrl || '' }));
+    }
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current.click();
   };
 
   const handleSubmit = async (e) => {
@@ -71,12 +93,37 @@ const ProfilePage = () => {
             <Grid container spacing={3} alignItems="center">
               {/* Avatar */}
               <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-                <Avatar
-                  src={formState.avatarUrl}
-                  sx={{ width: 100, height: 100, fontSize: 48, border: '3px solid', borderColor: 'primary.main' }}
-                >
-                  {!formState.avatarUrl && currentUser.name[0]}
-                </Avatar>
+                <Box sx={{ position: 'relative', width: 100, height: 100 }}>
+                  <Avatar
+                    src={imagePreview}
+                    sx={{ width: 100, height: 100, fontSize: 48, border: '3px solid', borderColor: 'primary.main', cursor: 'pointer' }}
+                    onClick={handleAvatarClick}
+                  >
+                    {!imagePreview && currentUser.name[0]}
+                  </Avatar>
+                  <IconButton
+                    sx={{
+                      position: 'absolute',
+                      bottom: 0,
+                      right: 0,
+                      backgroundColor: 'primary.main',
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: 'primary.dark',
+                      },
+                    }}
+                    onClick={handleAvatarClick}
+                  >
+                    <PhotoCameraIcon fontSize="small" />
+                  </IconButton>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    style={{ display: 'none' }}
+                  />
+                </Box>
               </Grid>
 
               {/* Name */}
@@ -104,10 +151,10 @@ const ProfilePage = () => {
                 />
               </Grid>
               
-              {/* Avatar URL */}
+              {/* Avatar URL Text Field (can still be used if desired, or hidden) */}
               <Grid item xs={12}>
                 <TextField
-                  label="URL del Avatar"
+                  label="URL del Avatar (o cargado localmente)"
                   name="avatarUrl"
                   value={formState.avatarUrl}
                   onChange={handleChange}
@@ -115,7 +162,7 @@ const ProfilePage = () => {
                   placeholder="https://ejemplo.com/imagen.png"
                 />
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                  Pega la URL de una imagen para tu foto de perfil.
+                  Pega la URL de una imagen o carga una localmente. Ten en cuenta que la carga local solo se guarda en tu navegador y no es persistente en el servidor.
                 </Typography>
               </Grid>
 
