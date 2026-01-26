@@ -335,7 +335,7 @@ app.get('/api/tasks', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/tasks', authenticateToken, async (req, res) => {
-  const { title, dueDate, priority, startTime, endTime } = req.body;
+  const { title, description, dueDate, priority, startTime, endTime } = req.body;
   if (!title) {
     return res.status(400).json({ error: 'Faltan campos obligatorios' });
   }
@@ -344,6 +344,7 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
     const task = await prisma.task.create({
       data: {
         title,
+        description,
         dueDate: dueDate ? new Date(dueDate) : null,
         userId: req.user.id,
         priority: priority,

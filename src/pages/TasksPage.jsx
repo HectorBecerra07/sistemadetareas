@@ -6,6 +6,7 @@ import ListItemText from '@mui/material/ListItemText';
 import Checkbox from '@mui/material/Checkbox';
 import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -20,38 +21,48 @@ import ListItemButton from '@mui/material/ListItemButton';
 import Tooltip from '@mui/material/Tooltip';
 
 import { useUser } from '../context/UserContext';
-import { fetchTasks, createTask, updateTask, deleteTask } from '../services/api';
-import CreateTaskModal from '../components/CreateTaskModal';
+import { fetchTasks, createTask, updateTask, deleteTask, fetchUsers } from '../services/api';
+import TaskFormModal from '../components/TaskFormModal';
 
 const TasksPage = () => {
   const { currentUser } = useUser();
   const [userTasks, setUserTasks] = useState([]);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all'); // all | pending | completed
 
   useEffect(() => {
-    const loadTasks = async () => {
+    const loadInitialData = async () => {
       if (!currentUser) {
         setLoading(false);
         return;
       }
       try {
         setLoading(true);
-        const fetchedTasks = await fetchTasks();
+        const [fetchedTasks, fetchedUsers] = await Promise.all([
+            fetchTasks(),
+            currentUser.role === 'admin' ? fetchUsers() : Promise.resolve([])
+        ]);
+        
         setUserTasks(fetchedTasks);
+        if (currentUser.role === 'admin') {
+            setUsers(fetchedUsers);
+        }
+
         setError(null);
       } catch (err) {
         console.error(err);
         setError(
-          'No se pudieron cargar las tareas. Asegúrate de que el servidor backend se está ejecutando.'
+          'No se pudieron cargar los datos. Asegúrate de que el servidor backend se está ejecutando.'
         );
       } finally {
         setLoading(false);
       }
     };
-    loadTasks();
+    loadInitialData();
   }, [currentUser]);
 
   const handleToggleComplete = async (taskId) => {
@@ -59,11 +70,11 @@ const TasksPage = () => {
     if (!task) return;
 
     try {
-      const updatedTask = await updateTask(taskId, {
+      const updated = await updateTask(taskId, {
         completed: !task.completed,
       });
       setUserTasks((prevTasks) =>
-        prevTasks.map((t) => (t.id === taskId ? updatedTask : t))
+        prevTasks.map((t) => (t.id === taskId ? updated : t))
       );
       setError(null);
     } catch (err) {
@@ -83,18 +94,38 @@ const TasksPage = () => {
     }
   };
 
-  const handleOpenModal = () => setModalOpen(true);
-  const handleCloseModal = () => setModalOpen(false);
+  const handleOpenCreateModal = () => {
+    setSelectedTask(null);
+    setIsModalOpen(true);
+  };
 
-  const handleAddTask = async (newTaskData) => {
-    if (!currentUser) return;
+  const handleOpenEditModal = (task) => {
+    setSelectedTask(task);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedTask(null);
+  };
+
+  const handleSaveTask = async (taskData, taskId) => {
     try {
-      const newlyCreatedTask = await createTask(newTaskData);
-      setUserTasks((prevTasks) => [...prevTasks, newlyCreatedTask]);
+      if (taskId) {
+        // Update
+        const updated = await updateTask(taskId, taskData);
+        setUserTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? updated : t))
+        );
+      } else {
+        // Create
+        const newTask = await createTask({ ...taskData, userId: currentUser.id });
+        setUserTasks((prev) => [...prev, newTask]);
+      }
       setError(null);
     } catch (err) {
       console.error(err);
-      setError('Error al crear la tarea.');
+      setError('Error al guardar la tarea.');
     }
   };
 
@@ -112,7 +143,6 @@ const TasksPage = () => {
     return true; // all
   });
 
-  // Ordenar por fecha límite (más próxima primero). Las que no tienen fecha se van al final.
   const filteredTasks = [...baseFiltered].sort((a, b) => {
     if (!a.dueDate && !b.dueDate) return 0;
     if (!a.dueDate) return 1;
@@ -125,14 +155,7 @@ const TasksPage = () => {
 
   if (!currentUser || loading) {
     return (
-      <Box
-        sx={{
-          minHeight: '60vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
+      <Box sx={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <CircularProgress />
       </Box>
     );
@@ -146,52 +169,25 @@ const TasksPage = () => {
         </Alert>
       )}
 
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: { xs: 'flex-start', sm: 'center' },
-          flexDirection: { xs: 'column', sm: 'row' },
-          mb: 2,
-          gap: 2,
-        }}
-      >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, flexDirection: { xs: 'column', sm: 'row' }, mb: 2, gap: 2 }}>
         <Box>
           <Typography variant="h4" gutterBottom>
             Mis Tareas
           </Typography>
           <Stack direction="row" spacing={1}>
             <Chip label={`Total: ${totalCount}`} size="small" />
-            <Chip
-              label={`Pendientes: ${pendingCount}`}
-              size="small"
-              color="warning"
-            />
-            <Chip
-              label={`Completadas: ${completedCount}`}
-              size="small"
-              color="success"
-            />
+            <Chip label={`Pendientes: ${pendingCount}`} size="small" color="warning" />
+            <Chip label={`Completadas: ${completedCount}`} size="small" color="success" />
           </Stack>
         </Box>
-
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenModal}
-        >
+        <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenCreateModal}>
           Crear tarea
         </Button>
       </Box>
 
       <Paper sx={{ borderRadius: 3, overflow: 'hidden' }}>
-        {/* Filtros */}
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs
-            value={filter}
-            onChange={handleFilterChange}
-            variant="fullWidth"
-          >
+          <Tabs value={filter} onChange={handleFilterChange} variant="fullWidth">
             <Tab label="Todas" value="all" />
             <Tab label="Pendientes" value="pending" />
             <Tab label="Completadas" value="completed" />
@@ -199,12 +195,7 @@ const TasksPage = () => {
         </Box>
 
         {filteredTasks.length === 0 ? (
-          <Box
-            sx={{
-              p: 3,
-              textAlign: 'center',
-            }}
-          >
+          <Box sx={{ p: 3, textAlign: 'center' }}>
             <Typography variant="body1" color="text.secondary">
               No hay tareas para mostrar con el filtro seleccionado.
             </Typography>
@@ -216,63 +207,38 @@ const TasksPage = () => {
               const due = hasDueDate ? new Date(task.dueDate) : null;
               if (due) due.setHours(0, 0, 0, 0);
 
-              const isOverdue =
-                !task.completed && hasDueDate && due < today;
+              const isOverdue = !task.completed && hasDueDate && due < today;
 
               let statusChip;
               if (task.completed) {
-                statusChip = (
-                  <Chip
-                    label="Completada"
-                    size="small"
-                    color="success"
-                    sx={{ ml: 1 }}
-                  />
-                );
+                statusChip = <Chip label="Completada" size="small" color="success" sx={{ ml: 1 }} />;
               } else if (isOverdue) {
-                statusChip = (
-                  <Chip
-                    label="Vencida"
-                    size="small"
-                    color="error"
-                    sx={{ ml: 1 }}
-                  />
-                );
+                statusChip = <Chip label="Vencida" size="small" color="error" sx={{ ml: 1 }} />;
               } else {
-                statusChip = (
-                  <Chip
-                    label="Pendiente"
-                    size="small"
-                    color="warning"
-                    sx={{ ml: 1 }}
-                  />
-                );
+                statusChip = <Chip label="Pendiente" size="small" color="warning" sx={{ ml: 1 }} />;
               }
 
               return (
                 <ListItem
                   key={task.id}
                   secondaryAction={
-                    <Tooltip title="Eliminar tarea">
-                      <IconButton
-                        edge="end"
-                        aria-label="delete"
-                        onClick={() => handleDeleteTask(task.id)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
+                    <Stack direction="row" spacing={1}>
+                        <Tooltip title="Editar tarea">
+                            <IconButton edge="end" aria-label="edit" onClick={() => handleOpenEditModal(task)}>
+                                <EditIcon />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Eliminar tarea">
+                            <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteTask(task.id)}>
+                                <DeleteIcon />
+                            </IconButton>
+                        </Tooltip>
+                    </Stack>
                   }
                   disablePadding
                 >
                   <ListItemButton dense>
-                    <Tooltip
-                      title={
-                        task.completed
-                          ? 'Marcar como pendiente'
-                          : 'Marcar como completada'
-                      }
-                    >
+                    <Tooltip title={task.completed ? 'Marcar como pendiente' : 'Marcar como completada'}>
                       <Checkbox
                         edge="start"
                         checked={task.completed}
@@ -281,36 +247,16 @@ const TasksPage = () => {
                         onChange={() => handleToggleComplete(task.id)}
                       />
                     </Tooltip>
-
                     <ListItemText
                       primary={
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                          }}
-                        >
-                          <Typography
-                            variant="subtitle1"
-                            sx={{
-                              textDecoration: task.completed
-                                ? 'line-through'
-                                : 'none',
-                            }}
-                          >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="subtitle1" sx={{ textDecoration: task.completed ? 'line-through' : 'none' }}>
                             {task.title}
                           </Typography>
                           {statusChip}
                         </Box>
                       }
-                      secondary={
-                        hasDueDate
-                          ? `Fecha límite: ${new Date(
-                              task.dueDate
-                            ).toLocaleDateString()}`
-                          : 'Sin fecha límite'
-                      }
+                      secondary={hasDueDate ? `Fecha límite: ${new Date(task.dueDate).toLocaleDateString()}`: 'Sin fecha límite'}
                     />
                   </ListItemButton>
                 </ListItem>
@@ -320,11 +266,15 @@ const TasksPage = () => {
         )}
       </Paper>
 
-      <CreateTaskModal
-        open={modalOpen}
-        handleClose={handleCloseModal}
-        handleAddTask={handleAddTask}
-      />
+      {isModalOpen && (
+        <TaskFormModal
+            open={isModalOpen}
+            handleClose={handleCloseModal}
+            onSave={handleSaveTask}
+            users={users}
+            initialData={selectedTask}
+        />
+      )}
     </Box>
   );
 };
