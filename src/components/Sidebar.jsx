@@ -69,7 +69,7 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box sx={{ p: 2, textAlign: 'center' }}>
         <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-          Work Tareas
+          Area de Trabajo
         </Typography>
       </Box>
       <Divider />
