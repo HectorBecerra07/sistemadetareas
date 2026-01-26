@@ -197,7 +197,16 @@ const CalendarPage = () => {
                     open={Boolean(newEventSlot || editEventData)}
                     handleClose={() => { setNewEventSlot(null); setEditEventData(null); }}
                     onSave={handleSave}
-                    initialData={editEventData || { dueDate: moment(newEventSlot.start).format('YYYY-MM-DD') }}
+                    initialData={
+                      editEventData
+                        ? { ...editEventData, start: new Date(editEventData.start), end: new Date(editEventData.end) }
+                        : {
+                            start: newEventSlot.start,
+                            end: newEventSlot.end,
+                            allDay: Boolean(newEventSlot.action === 'select' && !newEventSlot.slots.some(s => typeof s === 'string' && s.includes('T'))),
+                            resource: { priority: 'media' }, // Default for new events
+                          }
+                    }
                 />
             )}
         </Box>
