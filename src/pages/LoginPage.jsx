@@ -3,7 +3,6 @@ import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import {
   Box,
-  Paper,
   Typography,
   TextField,
   Button,
@@ -13,14 +12,17 @@ import {
   Avatar,
   InputAdornment,
   IconButton,
+  Card,
+  CardContent,
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
+// A more subtle and modern background
 const backgroundUrl =
-  'https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=1200&q=80';
+  'https://images.unsplash.com/photo-1588345921523-c2dcdb7f1dcd?auto=format&fit=crop&w=1200&q=80';
 
 const LoginPage = () => {
   const { login } = useUser();
@@ -41,9 +43,9 @@ const LoginPage = () => {
 
     try {
       setSubmitting(true);
-      const user = await login(email, password); // Get the user object
+      const user = await login(email, password);
       if (user.role === 'admin') {
-        navigate('/admin');
+        navigate('/admin/tasks');
       } else {
         navigate('/');
       }
@@ -55,28 +57,40 @@ const LoginPage = () => {
   };
 
   return (
-    <Grid container component="main" sx={{ height: '100vh', width: '100vw', maxWidth: '100%' }}>
+    <Grid container component="main" sx={{ height: '100vh' }}>
       {/* Columna de Branding */}
       <Grid
+        item
+        xs={false}
+        sm={4}
+        md={7}
         sx={{
-          width: { sm: '33.33%', md: '50%' },
-          display: { xs: 'none', sm: 'flex' },
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${backgroundUrl})`,
+          backgroundImage: `url(${backgroundUrl})`,
           backgroundRepeat: 'no-repeat',
           backgroundColor: (t) =>
             t.palette.mode === 'light' ? t.palette.grey[50] : t.palette.grey[900],
           backgroundSize: 'cover',
           backgroundPosition: 'center',
+          display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'white',
         }}
       >
-        <Box sx={{ p: 4, textAlign: 'center' }}>
-          <Typography component="h1" variant="h3" sx={{ fontWeight: 'bold' }}>
+        <Box
+          sx={{
+            p: 4,
+            textAlign: 'center',
+            color: 'white',
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '20px',
+            maxWidth: '80%',
+          }}
+        >
+          <Typography component="h1" variant="h2" sx={{ fontWeight: 'bold' }}>
             Work Tareas
           </Typography>
-          <Typography variant="h6">
+          <Typography variant="h5">
             Organiza tu vida, un día a la vez.
           </Typography>
         </Box>
@@ -84,42 +98,41 @@ const LoginPage = () => {
 
       {/* Columna del Formulario */}
       <Grid
-        component={Paper}
-        elevation={8}
+        item
+        xs={12}
+        sm={8}
+        md={5}
+        component={Card}
+        elevation={6}
         square
         sx={{
-          width: { xs: '100%', sm: '66.67%', md: '50%' },
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <Box
+        <CardContent
           sx={{
-            my: 8,
-            p: { xs: 3, sm: 4 },
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
+            p: 4,
             width: '100%',
-            maxWidth: 480,
-            mx: 'auto',
+            maxWidth: 450,
           }}
         >
           <Avatar sx={{ m: 1, bgcolor: 'primary.main', width: 56, height: 56 }}>
             <LockOutlinedIcon fontSize="large" />
           </Avatar>
-
           <Typography component="h1" variant="h4" sx={{ mt: 2, fontWeight: 'bold' }}>
-            Bienvenido de nuevo
+            Bienvenido
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            Inicia sesión para continuar
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+            Inicia sesión con tu cuenta
           </Typography>
 
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
-            {/* ... (TextFields remain the same) ... */}
             <TextField
               margin="normal"
               required
@@ -139,7 +152,6 @@ const LoginPage = () => {
                 ),
               }}
             />
-
             <TextField
               margin="normal"
               required
@@ -166,32 +178,29 @@ const LoginPage = () => {
                 ),
               }}
             />
-
             {error && (
               <Alert severity="error" sx={{ mt: 2, width: '100%' }}>
                 {error}
               </Alert>
             )}
-
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2, py: 1.5, fontSize: '1.05rem', textTransform: 'none' }}
+              sx={{ mt: 3, mb: 2, py: 1.5, fontSize: '1.05rem' }}
               disabled={submitting}
             >
-              {submitting ? 'Entrando...' : 'Entrar'}
+              {submitting ? 'Iniciando sesión...' : 'Iniciar Sesión'}
             </Button>
-
             <Grid container justifyContent="flex-end">
-              <Grid>
+              <Grid item>
                 <Link component={RouterLink} to="/register" variant="body2">
-                  ¿No tienes una cuenta? Regístrate
+                  ¿Aún no tienes cuenta? Regístrate
                 </Link>
               </Grid>
             </Grid>
           </Box>
-        </Box>
+        </CardContent>
       </Grid>
     </Grid>
   );

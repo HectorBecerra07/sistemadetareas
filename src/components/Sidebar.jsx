@@ -3,7 +3,6 @@ import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   Drawer,
   List,
-  ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
@@ -11,7 +10,6 @@ import {
   Box,
   Avatar,
   Typography,
-  Button,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -22,7 +20,7 @@ import GroupIcon from '@mui/icons-material/Group';
 import MailIcon from '@mui/icons-material/Mail';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-
+import LogoutIcon from '@mui/icons-material/Logout';
 import { useUser } from '../context/UserContext';
 
 const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
@@ -37,21 +35,21 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
   const baseNavItems = [
     { text: 'Inicio', icon: <HomeIcon />, path: '/' },
     { text: 'Tareas', icon: <TaskIcon />, path: '/tasks' },
-    { text: 'Calendario Personal', icon: <CalendarMonthIcon />, path: '/calendar' },
+    { text: 'Calendario', icon: <CalendarMonthIcon />, path: '/calendar' },
     { text: 'Calendario General', icon: <GroupIcon />, path: '/calendar/general' },
     { text: 'Mensajes', icon: <MailIcon />, path: '/messages' },
-    { text: 'Mi Perfil', icon: <AccountCircleIcon />, path: '/profile' },
+    { text: 'Perfil', icon: <AccountCircleIcon />, path: '/profile' },
   ];
 
   const adminNavItems = isAdmin
     ? [
         {
-          text: 'Panel Tareas (Admin)',
+          text: 'Admin Tareas',
           icon: <AdminPanelSettingsIcon />,
           path: '/admin/tasks',
         },
         {
-          text: 'Gestión de Usuarios',
+          text: 'Admin Usuarios',
           icon: <GroupIcon />,
           path: '/admin/users',
         },
@@ -60,10 +58,7 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
 
   const navItems = [...baseNavItems, ...adminNavItems];
 
-  const isActive = (path) => {
-    if (path === '/') return location.pathname === '/';
-    return location.pathname.startsWith(path);
-  };
+  const isActive = (path) => location.pathname === path;
 
   const handleLogout = () => {
     logout();
@@ -71,146 +66,79 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
   };
 
   const drawerContent = (
-    <div>
-      <Box
-        sx={{
-          p: 2,
-          display: 'flex',
-          alignItems: 'center',
-          flexDirection: 'column',
-          background: (theme) => `linear-gradient(145deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-          color: 'white',
-        }}
-      >
-        <Typography
-          variant="subtitle2"
-          sx={{
-            textTransform: 'uppercase',
-            letterSpacing: 1,
-            mb: 1,
-            fontWeight: 'bold',
-          }}
-        >
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <Box sx={{ p: 2, textAlign: 'center' }}>
+        <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
           Work Tareas
         </Typography>
-
-        {currentUser && (
-          <>
-            <Avatar
-              src={currentUser.avatarUrl}
-              sx={{
-                width: 64,
-                height: 64,
-                mb: 1,
-                bgcolor: 'rgba(255,255,255,0.25)',
-                fontSize: 28,
-                border: '2px solid white',
-              }}
-            >
-              {!currentUser.avatarUrl && currentUser.name[0]}
-            </Avatar>
-            <Typography variant="h6" sx={{ fontWeight: 600, textAlign: 'center' }}>
+      </Box>
+      <Divider />
+      {currentUser && (
+        <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
+          <Avatar src={currentUser.avatarUrl} sx={{ width: 48, height: 48, mr: 2 }}>
+            {!currentUser.avatarUrl && currentUser.name[0]}
+          </Avatar>
+          <Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
               {currentUser.name}
             </Typography>
-            <Typography variant="caption" sx={{ opacity: 0.9 }}>
+            <Typography variant="body2" color="text.secondary">
               {currentUser.email}
             </Typography>
-
-            {isAdmin && (
-              <Typography
-                variant="caption"
-                sx={{
-                  mt: 0.5,
-                  fontWeight: 'bold',
-                  bgcolor: 'rgba(255, 255, 255, 0.2)',
-                  px: 1,
-                  borderRadius: 1,
-                }}
-              >
-                Administrador
-              </Typography>
-            )}
-
-            <Button
-              variant="outlined"
-              size="small"
-              sx={{
-                mt: 2,
-                color: 'white',
-                borderColor: 'rgba(255,255,255,0.7)',
-                '&:hover': {
-                  borderColor: 'white',
-                  backgroundColor: 'rgba(255,255,255,0.1)',
-                },
-              }}
-              onClick={handleLogout}
-            >
-              Cerrar sesión
-            </Button>
-          </>
-        )}
-      </Box>
-
+          </Box>
+        </Box>
+      )}
       <Divider />
-
-      <List sx={{ mt: 1 }}>
+      <List sx={{ flexGrow: 1, p: 1 }}>
         {navItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              component={RouterLink}
-              to={item.path}
-              selected={isActive(item.path)}
-              onClick={isMobile ? handleDrawerToggle : undefined}
-              sx={{
-                mx: 1,
-                mb: 0.5,
-                borderRadius: 2,
-                '&.Mui-selected': {
-                  backgroundColor: 'primary.main',
-                  color: 'primary.contrastText',
-                  '&:hover': {
-                    backgroundColor: 'primary.dark',
-                  },
-                  '& .MuiListItemIcon-root': {
-                    color: 'primary.contrastText',
-                  },
+          <ListItemButton
+            key={item.text}
+            component={RouterLink}
+            to={item.path}
+            selected={isActive(item.path)}
+            onClick={isMobile ? handleDrawerToggle : undefined}
+            sx={{
+              borderRadius: theme.shape.borderRadius,
+              mb: 0.5,
+              '&.Mui-selected': {
+                backgroundColor: theme.palette.action.selected,
+                '&:hover': {
+                  backgroundColor: theme.palette.action.hover,
                 },
-              }}
-            >
-              <ListItemIcon
-                sx={{
-                  minWidth: 40,
-                }}
-              >
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.text}
-                primaryTypographyProps={{
-                  fontSize: 14,
-                  fontWeight: isActive(item.path) ? 'bold' : 'normal',
-                }}
-              />
-            </ListItemButton>
-          </ListItem>
+              },
+            }}
+          >
+            <ListItemIcon>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.text} />
+          </ListItemButton>
         ))}
       </List>
-    </div>
+      <Divider />
+      <Box sx={{ p: 1 }}>
+        <ListItemButton
+          onClick={handleLogout}
+          sx={{ borderRadius: theme.shape.borderRadius }}
+        >
+          <ListItemIcon>
+            <LogoutIcon />
+          </ListItemIcon>
+          <ListItemText primary="Cerrar Sesión" />
+        </ListItemButton>
+      </Box>
+    </Box>
   );
 
   return (
     <Box
       component="nav"
       sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
+      aria-label="mailbox folders"
     >
-      {/* Mobile Drawer */}
       <Drawer
         variant="temporary"
         open={mobileOpen}
         onClose={handleDrawerToggle}
-        ModalProps={{
-          keepMounted: true, // Better open performance on mobile.
-        }}
+        ModalProps={{ keepMounted: true }}
         sx={{
           display: { xs: 'block', md: 'none' },
           '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
@@ -218,7 +146,6 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
       >
         {drawerContent}
       </Drawer>
-      {/* Desktop Drawer */}
       <Drawer
         variant="permanent"
         sx={{

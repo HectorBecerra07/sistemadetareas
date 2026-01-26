@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
-  Paper,
   Table,
   TableBody,
   TableCell,
@@ -10,7 +9,6 @@ import {
   TableHead,
   TableRow,
   Button,
-  Modal,
   TextField,
   Select,
   MenuItem,
@@ -22,22 +20,19 @@ import {
   IconButton,
   Tooltip,
   Stack,
+  Card,
+  CardContent,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  useTheme,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
-import { fetchUsers, adminCreateUser, adminUpdateUser } from '../services/api';
+import DeleteIcon from '@mui/icons-material/Delete'; // Assuming delete functionality will be added or is already there
 
-const modalStyle = {
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: 400,
-  bgcolor: 'background.paper',
-  borderRadius: 2,
-  boxShadow: 24,
-  p: 4,
-};
+import { fetchUsers, adminCreateUser, adminUpdateUser, adminDeleteUser } from '../services/api';
 
 const AdminUsersPage = () => {
   const [users, setUsers] = useState([]);
@@ -50,6 +45,7 @@ const AdminUsersPage = () => {
   const [formError, setFormError] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
 
+  const theme = useTheme();
   const isEditing = Boolean(selectedUser);
 
   const loadUsers = async () => {
@@ -95,7 +91,6 @@ const AdminUsersPage = () => {
     setFormError(null);
     try {
         const dataToSend = { ...formState };
-        // Do not send empty password field unless it is a new user
         if (isEditing && !dataToSend.password) {
             delete dataToSend.password;
         }
@@ -114,68 +109,96 @@ const AdminUsersPage = () => {
     }
   };
 
+  const handleDeleteUser = async (userId) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
+        try {
+            await adminDeleteUser(userId);
+            loadUsers();
+        } catch (err) {
+            setError(err.message || 'Error al eliminar el usuario.');
+        }
+    }
+  };
+
   if (loading) {
-    return <CircularProgress />;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Gestión de Usuarios
-      </Typography>
-      
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Box>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+            Gestión de Usuarios
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Administrar usuarios del sistema (crear, editar, eliminar).
+          </Typography>
+        </Box>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenModal()}>
           Crear Usuario
         </Button>
       </Box>
-
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Nombre</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Rol</TableCell>
-              <TableCell align="right">Acciones</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>{user.id}</TableCell>
-                <TableCell>{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>
-                  <Chip 
-                    label={user.role} 
-                    color={user.role === 'admin' ? 'primary' : 'default'}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell align="right">
-                    <Tooltip title="Editar Usuario">
-                        <IconButton onClick={() => handleOpenModal(user)}>
-                            <EditIcon />
-                        </IconButton>
-                    </Tooltip>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
       
-      {/* Create/Edit User Modal */}
-      <Modal open={isModalOpen} onClose={handleCloseModal}>
-        <Box sx={modalStyle} component="form" onSubmit={handleFormSubmit}>
-          <Typography variant="h6" component="h2" sx={{ mb: 2 }}>
-            {isEditing ? 'Editar Usuario' : 'Crear Nuevo Usuario'}
-          </Typography>
-          
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      
+      <Card>
+        <CardContent sx={{ p: 0 }}>
+          <TableContainer>
+            <Table>
+              <TableHead sx={{ bgcolor: theme.palette.grey[100] }}>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>ID</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Nombre</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Email</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Rol</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 'bold' }}>Acciones</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {users.map((user) => (
+                  <TableRow key={user.id} hover>
+                    <TableCell>{user.id}</TableCell>
+                    <TableCell>{user.name}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>
+                      <Chip 
+                        label={user.role} 
+                        color={user.role === 'admin' ? 'primary' : 'default'}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell align="right">
+                        <Stack direction="row" spacing={1} justifyContent="flex-end">
+                            <Tooltip title="Editar Usuario">
+                                <IconButton size="small" onClick={() => handleOpenModal(user)}>
+                                    <EditIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Eliminar Usuario">
+                                <IconButton size="small" color="error" onClick={() => handleDeleteUser(user.id)}>
+                                    <DeleteIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardContent>
+      </Card>
+      
+      <Dialog open={isModalOpen} onClose={handleCloseModal} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 'bold' }}>
+          {isEditing ? 'Editar Usuario' : 'Crear Nuevo Usuario'}
+        </DialogTitle>
+        <DialogContent>
           {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
           
           <TextField name="name" label="Nombre" value={formState.name} onChange={handleFormChange} fullWidth required margin="normal" />
@@ -189,15 +212,14 @@ const AdminUsersPage = () => {
               <MenuItem value="admin">Administrador</MenuItem>
             </Select>
           </FormControl>
-          
-          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-            <Button onClick={handleCloseModal}>Cancelar</Button>
-            <Button type="submit" variant="contained" disabled={formLoading}>
-              {formLoading ? <CircularProgress size={24} /> : (isEditing ? 'Guardar Cambios' : 'Crear')}
-            </Button>
-          </Box>
-        </Box>
-      </Modal>
+        </DialogContent>
+        <DialogActions sx={{ p: '0 24px 24px' }}>
+          <Button onClick={handleCloseModal}>Cancelar</Button>
+          <Button type="submit" variant="contained" disabled={formLoading} onClick={handleFormSubmit}>
+            {formLoading ? <CircularProgress size={24} color="inherit" /> : (isEditing ? 'Guardar Cambios' : 'Crear')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

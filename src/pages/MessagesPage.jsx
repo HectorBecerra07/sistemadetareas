@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Typography,
   List,
-  ListItem,
   ListItemText,
   ListItemButton,
   Divider,
@@ -20,6 +19,7 @@ import {
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import moment from 'moment';
 
 import { fetchMessages, createMessage, fetchUsers } from '../services/api';
 import { useUser } from '../context/UserContext';
@@ -62,15 +62,18 @@ const MessagesPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, selectedUserId]);
 
-  // Auto-select the first user if none is selected
   useEffect(() => {
-    if (selectedUserId === null && users.length > 0) {
+    if (selectedUserId === null && users.length > 0 && !isMobile) {
       setSelectedUserId(users[0].id);
     }
-  }, [users, selectedUserId]);
+  }, [users, selectedUserId, isMobile]);
 
   const handleSelectUser = (userId) => {
     setSelectedUserId(userId);
+    if (isMobile) {
+      // In mobile, we might want to automatically scroll to chat view
+      // This is handled by conditional rendering of Grid items
+    }
   };
 
   const handleSendMessage = async () => {
@@ -105,48 +108,56 @@ const MessagesPage = () => {
     }).sort((a, b) => {
       if (!a.lastMessage) return 1;
       if (!b.lastMessage) return -1;
-      return new Date(b.lastMessage.createdAt) - new Date(a.lastMessage.createdAt);
+      return moment(b.lastMessage.createdAt).diff(moment(a.lastMessage.createdAt));
     });
   };
 
   if (loading) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   const conversationList = (
-    <Box sx={{ overflowY: 'auto', height: '100%' }}>
-      <Typography variant="h6" sx={{ p: 2, pb: 1 }}>Conversations</Typography>
-      <List sx={{ p: '0 8px' }}>
+    <Box sx={{ overflowY: 'auto', height: '100%', bgcolor: 'background.paper' }}>
+      <Typography variant="h6" sx={{ p: 2, pb: 1, fontWeight: 'bold' }}>Conversaciones</Typography>
+      <Divider />
+      <List sx={{ p: 1 }}>
         {getConversations().map(({ user, lastMessage }) => (
           <ListItemButton
             key={user.id}
             selected={selectedUserId === user.id}
             onClick={() => handleSelectUser(user.id)}
-            sx={{ 
-              borderRadius: 1.5, 
+            sx={{
+              borderRadius: theme.shape.borderRadius,
               mb: 0.5,
               '&.Mui-selected': {
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
+                backgroundColor: theme.palette.primary.main,
+                color: theme.palette.primary.contrastText,
                 '&:hover': {
-                  bgcolor: 'primary.dark',
-                }
+                  backgroundColor: theme.palette.primary.dark,
+                },
               },
-               '& .MuiListItemText-secondary': {
-                color: selectedUserId === user.id ? 'primary.contrastText' : 'text.secondary',
-                opacity: selectedUserId === user.id ? 0.8 : 1,
-              }
+              '&.Mui-selected .MuiListItemText-secondary': {
+                color: theme.palette.primary.contrastText,
+                opacity: 0.8,
+              },
+              '&.Mui-selected .MuiListItemIcon-root': {
+                color: theme.palette.primary.contrastText,
+              },
             }}
           >
             <ListItemAvatar>
-              <Avatar sx={{ bgcolor: selectedUserId === user.id ? 'white' : 'primary.main', color: selectedUserId === user.id ? 'primary.main' : 'white' }}>
+              <Avatar src={user.avatarUrl} sx={{ bgcolor: selectedUserId === user.id ? 'white' : 'primary.light', color: selectedUserId === user.id ? 'primary.main' : 'white' }}>
                 {user.name[0]}
               </Avatar>
             </ListItemAvatar>
             <ListItemText
               primary={user.name}
-              secondary={lastMessage?.text || 'No messages yet.'}
-              primaryTypographyProps={{ fontWeight: 'medium' }}
+              secondary={lastMessage?.text || 'No hay mensajes aún.'}
+              primaryTypographyProps={{ fontWeight: selectedUserId === user.id ? 'bold' : 'medium' }}
               secondaryTypographyProps={{ noWrap: true, fontSize: '0.8rem' }}
             />
           </ListItemButton>
@@ -164,17 +175,16 @@ const MessagesPage = () => {
   const chatWindow = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.default' }}>
       {/* Chat Header */}
-      <Paper 
-        square 
-        elevation={0} 
-        sx={{ 
-          p: 2, 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: 1.5, 
-          borderBottom: 1, 
+      <Paper
+        elevation={0}
+        sx={{
+          p: 2,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          borderBottom: 1,
           borderColor: 'divider',
-          bgcolor: 'white'
+          bgcolor: 'background.paper',
         }}
       >
         {isMobile && (
@@ -182,40 +192,39 @@ const MessagesPage = () => {
             <ArrowBackIcon />
           </IconButton>
         )}
-        <Avatar sx={{ bgcolor: 'primary.light' }}>{selectedUser?.name?.[0]}</Avatar>
+        <Avatar src={selectedUser?.avatarUrl}>{selectedUser?.name?.[0]}</Avatar>
         <Typography variant="h6" fontWeight="bold">{selectedUser?.name}</Typography>
       </Paper>
       
       {/* Messages Area */}
-      <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 3, bgcolor: 'grey.50' }}>
+      <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 2, bgcolor: theme.palette.grey[100] }}>
         {filteredMessages.map((msg) => {
           const isMe = msg.from_user_id === currentUser.id;
           return (
-            <Box 
-              key={msg.id} 
-              sx={{ 
-                display: 'flex', 
-                justifyContent: isMe ? 'flex-end' : 'flex-start', 
+            <Box
+              key={msg.id}
+              sx={{
+                display: 'flex',
+                justifyContent: isMe ? 'flex-end' : 'flex-start',
                 mb: 2,
               }}
             >
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                 <Paper
-                  elevation={0}
+                  elevation={1}
                   sx={{
                     p: '10px 14px',
-                    borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                    bgcolor: isMe ? 'primary.main' : 'white',
-                    color: isMe ? 'white' : 'text.primary',
-                    maxWidth: '400px',
-                    border: isMe ? 0 : 1,
-                    borderColor: 'grey.300'
+                    borderRadius: isMe ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
+                    bgcolor: isMe ? theme.palette.primary.main : theme.palette.background.paper,
+                    color: isMe ? 'white' : theme.palette.text.primary,
+                    maxWidth: '70%',
+                    wordBreak: 'break-word',
                   }}
                 >
                   <Typography variant="body1">{msg.text}</Typography>
                 </Paper>
-                <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, px: 1 }}>
-                  {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, mx: 1 }}>
+                  {moment(msg.createdAt).format('hh:mm A')}
                 </Typography>
               </Box>
             </Box>
@@ -225,37 +234,30 @@ const MessagesPage = () => {
       </Box>
 
       {/* Message Input */}
-      <Box sx={{ p: 2, bgcolor: 'white', borderTop: 1, borderColor: 'divider' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'grey.100', borderRadius: 2, p: '4px' }}>
-          <TextField
-            fullWidth
-            variant="filled"
-            size="small"
-            placeholder="Escribe un mensaje..."
-            value={messageText}
-            onChange={e => setMessageText(e.target.value)}
-            onKeyPress={e => e.key === 'Enter' && handleSendMessage()}
-            sx={{
-              '& .MuiFilledInput-root': {
-                backgroundColor: 'transparent',
-                '&:hover, &.Mui-focused': {
-                  backgroundColor: 'transparent',
-                },
-              },
-              '& .MuiFilledInput-underline:before, & .MuiFilledInput-underline:after': {
-                display: 'none',
-              },
-            }}
-          />
-          <IconButton 
-            color="primary" 
-            onClick={handleSendMessage} 
-            disabled={!messageText.trim()}
-            sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' }, mr: '4px' }}
-          >
-            <SendIcon />
-          </IconButton>
-        </Box>
+      <Box sx={{ p: 2, bgcolor: 'background.paper', borderTop: 1, borderColor: 'divider' }}>
+        <Grid container spacing={1} alignItems="center">
+          <Grid item xs>
+            <TextField
+              fullWidth
+              variant="outlined"
+              size="small"
+              placeholder="Escribe un mensaje..."
+              value={messageText}
+              onChange={e => setMessageText(e.target.value)}
+              onKeyPress={e => e.key === 'Enter' && handleSendMessage()}
+            />
+          </Grid>
+          <Grid item>
+            <IconButton
+              color="primary"
+              onClick={handleSendMessage}
+              disabled={!messageText.trim()}
+              sx={{ p: 1.5 }}
+            >
+              <SendIcon />
+            </IconButton>
+          </Grid>
+        </Grid>
       </Box>
     </Box>
   );
@@ -266,20 +268,20 @@ const MessagesPage = () => {
       display: 'flex',
       flexDirection: 'column',
     }}>
-      <Typography variant="h4" sx={{ p: 2, pb: 0 }}>
+      <Typography variant="h4" sx={{ p: 2, pb: 0, fontWeight: 'bold' }}>
         Mensajería
       </Typography>
       {error && <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>}
-      <Paper 
+      <Paper
         elevation={0}
-        sx={{ 
-          flexGrow: 1, 
-          display: 'flex', 
-          m: 2, 
+        sx={{
+          flexGrow: 1,
+          display: 'flex',
+          m: 2,
           mt: 1,
-          borderRadius: 2, 
+          borderRadius: theme.shape.borderRadius,
           overflow: 'hidden',
-          bgcolor: 'white'
+          border: `1px solid ${theme.palette.divider}`,
         }}
       >
         <Grid container sx={{ height: '100%' }}>

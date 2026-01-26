@@ -9,7 +9,7 @@ import Typography from '@mui/material/Typography';
 import MenuIcon from '@mui/icons-material/Menu';
 import Sidebar from './Sidebar';
 
-const drawerWidth = 240;
+const drawerWidth = 260;
 
 const AppLayout = ({ children }) => {
   const theme = useTheme();
@@ -28,9 +28,7 @@ const AppLayout = ({ children }) => {
       sx={{
         display: 'flex',
         minHeight: '100vh',
-        width: '100vw',
-        maxWidth: '100%', // Asegura que no haya desbordamiento
-        bgcolor: 'grey.100',
+        bgcolor: 'background.default',
       }}
     >
       <AppBar
@@ -38,6 +36,9 @@ const AppLayout = ({ children }) => {
         sx={{
           width: { md: `calc(100% - ${drawerWidth}px)` },
           ml: { md: `${drawerWidth}px` },
+          backgroundColor: 'background.paper',
+          color: 'text.primary',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
         }}
       >
         <Toolbar>
@@ -50,8 +51,8 @@ const AppLayout = ({ children }) => {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div">
-            Sistema de Tareas
+          <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold' }}>
+            Work Tareas
           </Typography>
         </Toolbar>
       </AppBar>
@@ -63,16 +64,16 @@ const AppLayout = ({ children }) => {
       />
 
       <Box
+        component="main"
         sx={{
           flexGrow: 1,
-          p: isMessagesPage ? 0 : 3, // No padding on messages page
-          width: '100%',
-          mt: { xs: '56px', sm: '64px' },
-          overflow: isMessagesPage ? 'hidden' : 'auto', // Hide overflow on messages
-          height: isMessagesPage ? 'calc(100vh - 64px)' : 'auto', // Full height for messages
+          p: 3,
+          width: { xs: '100%', md: `calc(100% - ${drawerWidth}px)` },
+          mt: '64px',
         }}
       >
-        {children} {/* Renders the page component (e.g., TasksPage) via Outlet */}
+        <Toolbar /> 
+        {children}
       </Box>
     </Box>
   );

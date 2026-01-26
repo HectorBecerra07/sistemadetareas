@@ -7,25 +7,36 @@ import {
   CardContent,
   CircularProgress,
   Alert,
-  Paper,
-  Stack,
-  LinearProgress,
-  Avatar,
   List,
   ListItem,
   ListItemText,
   ListItemIcon,
-  Chip,
+  Checkbox,
 } from '@mui/material';
-
+import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
+import 'react-circular-progressbar/dist/styles.css';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import SpeakerNotesIcon from '@mui/icons-material/SpeakerNotes';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import EventNoteIcon from '@mui/icons-material/EventNote';
-
 import { useUser } from '../context/UserContext';
 import { fetchTasks, fetchMessages } from '../services/api';
+
+const StatCard = ({ title, value, icon, color }) => (
+  <Card sx={{ height: '100%' }}>
+    <CardContent>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+        {icon}
+        <Typography variant="h6" component="div" sx={{ ml: 1, fontWeight: 'bold' }}>
+          {title}
+        </Typography>
+      </Box>
+      <Typography variant="h3" component="div" sx={{ fontWeight: 'bold', color: color }}>
+        {value}
+      </Typography>
+    </CardContent>
+  </Card>
+);
 
 const DashboardPage = () => {
   const { currentUser } = useUser();
@@ -56,15 +67,15 @@ const DashboardPage = () => {
         const upcoming = userTasks
           .filter((t) => !t.completed && t.dueDate)
           .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-          .slice(0, 3);
+          .slice(0, 5);
         setRecentTasks(upcoming);
-        
+
         const userMessages = allMessages.filter(
-          (m) => m.to === currentUser.id || m.from === currentUser.id
+          (m) => m.to_user_id === currentUser.id || m.from_user_id === currentUser.id
         );
         const conversations = new Set(
           userMessages.map((m) =>
-            m.from === currentUser.id ? m.to : m.from
+            m.from_user_id === currentUser.id ? m.to_user_id : m.from_user_id
           )
         );
 
@@ -93,14 +104,7 @@ const DashboardPage = () => {
 
   if (loading || !currentUser) {
     return (
-      <Box
-        sx={{
-          minHeight: '60vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
         <CircularProgress />
       </Box>
     );
@@ -108,136 +112,76 @@ const DashboardPage = () => {
 
   return (
     <Box>
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
+      <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
+        Hola, {currentUser.name}!
+      </Typography>
+      <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 4 }}>
+        Aquí tienes un resumen de tu actividad.
+      </Typography>
 
-      <Paper
-        elevation={0}
-        sx={{
-          p: 3,
-          mb: 3,
-          borderRadius: 3,
-          color: 'white',
-          background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-        }}
-      >
-        <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
-          Hola de nuevo, {currentUser.name}
-        </Typography>
-        <Typography variant="subtitle1">
-          Este es un resumen rápido de tus tareas y mensajes. ¡A por ello!
-        </Typography>
-      </Paper>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      {/* Tarjetas principales */}
       <Grid container spacing={3}>
-        <Grid xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3, height: '100%' }}>
-            <CardContent sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
-              <Box>
-                <Typography color="text.secondary" gutterBottom>
-                  Tareas pendientes
-                </Typography>
-                <Typography variant="h3" component="div">
-                  {stats.pendingTasks}
-                </Typography>
-              </Box>
-              <Box textAlign="right">
-                <AssignmentIcon sx={{ fontSize: 60, color: 'warning.main', opacity: 0.8 }} />
-              </Box>
-            </CardContent>
-          </Card>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard title="Tareas Pendientes" value={stats.pendingTasks} icon={<AssignmentIcon color="warning" />} color="warning.main" />
         </Grid>
-
-        <Grid xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3, height: '100%' }}>
-            <CardContent sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
-              <Box>
-                <Typography color="text.secondary" gutterBottom>
-                  Tareas completadas
-                </Typography>
-                <Typography variant="h3" component="div">
-                  {stats.completedTasks}
-                </Typography>
-              </Box>
-               <Box textAlign="right">
-                <CheckCircleOutlineIcon sx={{ fontSize: 60, color: 'success.main', opacity: 0.8 }} />
-              </Box>
-            </CardContent>
-          </Card>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard title="Tareas Completadas" value={stats.completedTasks} icon={<CheckCircleOutlineIcon color="success" />} color="success.main" />
         </Grid>
-
-        <Grid xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3, height: '100%' }}>
-            <CardContent sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
-              <Box>
-                <Typography color="text.secondary" gutterBottom>
-                  Conversaciones
-                </Typography>
-                <Typography variant="h3" component="div">
-                  {stats.totalConversations}
-                </Typography>
-              </Box>
-              <Box textAlign="right">
-                <SpeakerNotesIcon sx={{ fontSize: 60, color: 'info.main', opacity: 0.8 }} />
-              </Box>
-            </CardContent>
-          </Card>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard title="Conversaciones" value={stats.totalConversations} icon={<SpeakerNotesIcon color="info" />} color="info.main" />
         </Grid>
-        
-        <Grid xs={12} sm={6} md={3}>
-          <Card sx={{ borderRadius: 3, height: '100%' }}>
-            <CardContent>
-              <Typography color="text.secondary" gutterBottom>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+              <Box sx={{ width: 100, height: 100, mb: 2 }}>
+                <CircularProgressbar
+                  value={completionRate}
+                  text={`${completionRate}%`}
+                  styles={buildStyles({
+                    textColor: 'inherit',
+                    pathColor: 'primary.main',
+                    trailColor: 'grey.300',
+                  })}
+                />
+              </Box>
+              <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
                 Progreso
-              </Typography>
-              <Typography variant="h4" component="div" sx={{ mb: 1 }}>
-                {completionRate}%
-              </Typography>
-              <LinearProgress
-                variant="determinate"
-                value={completionRate}
-                sx={{ height: 8, borderRadius: 5, mb: 1 }}
-              />
-              <Typography variant="body2" color="text.secondary">
-                {`Completadas ${stats.completedTasks} de ${totalTasks}`}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
-      
-      {/* Tareas Recientes */}
+
       <Grid container spacing={3} sx={{ mt: 1 }}>
-        <Grid xs={12}>
-            <Typography variant="h6" gutterBottom>
+        <Grid item xs={12}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
                 Tareas Próximas
-            </Typography>
-            <Paper>
-                <List>
-                    {recentTasks.length > 0 ? (
-                        recentTasks.map(task => (
-                            <ListItem key={task.id}>
-                                <ListItemIcon>
-                                    <EventNoteIcon />
-                                </ListItemIcon>
-                                <ListItemText 
-                                    primary={task.title}
-                                    secondary={`Vence: ${new Date(task.dueDate).toLocaleDateString()}`}
-                                />
-                                <Chip label="Pendiente" color="warning" size="small" />
-                            </ListItem>
-                        ))
-                    ) : (
-                        <ListItem>
-                            <ListItemText primary="No tienes tareas próximas. ¡Buen trabajo!" />
-                        </ListItem>
-                    )}
-                </List>
-            </Paper>
+              </Typography>
+              <List>
+                {recentTasks.length > 0 ? (
+                  recentTasks.map(task => (
+                    <ListItem key={task.id} disablePadding>
+                      <ListItemIcon>
+                        <Checkbox edge="start" tabIndex={-1} disableRipple />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={task.title}
+                        secondary={`Vence: ${new Date(task.dueDate).toLocaleDateString()}`}
+                      />
+                      <EventNoteIcon color="action" />
+                    </ListItem>
+                  ))
+                ) : (
+                  <ListItem>
+                    <ListItemText primary="No tienes tareas próximas. ¡Buen trabajo!" />
+                  </ListItem>
+                )}
+              </List>
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
     </Box>
