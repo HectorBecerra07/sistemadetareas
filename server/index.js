@@ -19,27 +19,32 @@ const __dirname = path.dirname(__filename);
 app.use(express.static(path.join(__dirname, '../dist')));
 
 // CORS and Express JSON middleware
-const allowedOrigins = [
+// CORS and Express JSON middleware
+const allowedOrigins = new Set([
   "http://localhost:3000",
   "http://localhost:5173",
+  "http://127.0.0.1:5173",
   "http://localhost:5174",
-];
+  "https://sistemadetareas.vercel.app", // <-- TU DOMINIO PROD
+]);
 
-// Add the production client URL from environment variables if it exists
+// Si tienes CLIENT_URL en .env (ej: https://sistemadetareas.vercel.app)
 if (process.env.CLIENT_URL) {
-  allowedOrigins.push(process.env.CLIENT_URL);
+  allowedOrigins.add(process.env.CLIENT_URL.replace(/\/$/, "")); // quita "/" final
 }
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
+
+    const originNormalized = origin.replace(/\/$/, "");
+
+    if (allowedOrigins.has(originNormalized) || vercelPreviewRegex.test(originNormalized)) {
+      return callback(null, true);
     }
-    return callback(null, true);
+
+    console.log("CORS blocked origin:", originNormalized);
+    return callback(new Error("The CORS policy for this site does not allow access from the specified Origin."), false);
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
