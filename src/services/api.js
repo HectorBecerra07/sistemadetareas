@@ -1,7 +1,5 @@
 // src/services/api.js
-const API_URL = import.meta.env.PROD
-  ? 'https://sistemadetareas.vercel.app/api'
-  : 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 const getAuthToken = () => {
   return localStorage.getItem('token');

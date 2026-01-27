@@ -1,15 +1,13 @@
 // lib/prisma.js
 import { PrismaClient } from '@prisma/client';
 
-let prisma;
+// Official Prisma Client singleton pattern
+// See: https://www.prisma.io/docs/guides/database/troubleshooting-orm/database-connections#prevent-hot-reloading-from-creating-new-instances-of-prismaclient
 
-if (process.env.NODE_ENV === 'production') {
-  prisma = new PrismaClient();
-} else {
-  if (!global.prisma) {
-    global.prisma = new PrismaClient();
-  }
-  prisma = global.prisma;
-}
+const globalForPrisma = globalThis;
+
+const prisma = globalForPrisma.prisma ?? new PrismaClient();
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 export default prisma;
