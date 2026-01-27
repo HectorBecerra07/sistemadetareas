@@ -25,13 +25,14 @@ const allowedOrigins = new Set([
   "http://localhost:5173",
   "http://127.0.0.1:5173",
   "http://localhost:5174",
-  "https://sistemadetareas.vercel.app", // <-- TU DOMINIO PROD
-]);
+  "https://sistemadetareas.vercel.app",
+].filter(Boolean));
 
-// Si tienes CLIENT_URL en .env (ej: https://sistemadetareas.vercel.app)
 if (process.env.CLIENT_URL) {
-  allowedOrigins.add(process.env.CLIENT_URL.replace(/\/$/, "")); // quita "/" final
+  allowedOrigins.add(process.env.CLIENT_URL.replace(/\/$/, ""));
 }
+
+const vercelPreviewRegex = /^https:\/\/.*\.vercel\.app$/;
 
 const corsOptions = {
   origin: (origin, callback) => {
@@ -44,7 +45,7 @@ const corsOptions = {
     }
 
     console.log("CORS blocked origin:", originNormalized);
-    return callback(new Error("The CORS policy for this site does not allow access from the specified Origin."), false);
+    return callback(new Error("Not allowed by CORS"), false);
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -53,7 +54,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
-app.use(express.json());
+
 
 // API routes
 // =============== MIDDLEWARE & ROUTERS ===============
