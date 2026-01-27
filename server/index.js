@@ -14,23 +14,21 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import prisma from "./lib/prisma.js";
 
-// Debug
-console.log("DATABASE_URL:", process.env.DATABASE_URL);
-console.log("POSTGRES_URL:", process.env.POSTGRES_URL);
-
 const app = express();
 
-// Servir frontend
-app.use(express.static(path.join(__dirname, "../dist")));
+// ======= Middleware base =======
+app.use(express.json());
 
-// ========== CORS ==========
-const allowedOrigins = new Set([
-  "http://localhost:3000",
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-  "http://localhost:5174",
-  "https://sistemadetareas.vercel.app",
-].filter(Boolean));
+// ======= CORS =======
+const allowedOrigins = new Set(
+  [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "https://sistemadetareas.vercel.app",
+  ].filter(Boolean)
+);
 
 if (process.env.CLIENT_URL) {
   allowedOrigins.add(process.env.CLIENT_URL.replace(/\/$/, ""));
@@ -43,7 +41,10 @@ const corsOptions = {
     if (!origin) return callback(null, true);
     const originNormalized = origin.replace(/\/$/, "");
 
-    if (allowedOrigins.has(originNormalized) || vercelPreviewRegex.test(originNormalized)) {
+    if (
+      allowedOrigins.has(originNormalized) ||
+      vercelPreviewRegex.test(originNormalized)
+    ) {
       return callback(null, true);
     }
 
@@ -58,14 +59,13 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
-// ========== MIDDLEWARE ==========
+// ======= Auth middleware + routes =======
 import { authenticateToken } from "./middleware/auth.js";
 import adminRoutes from "./routes/admin.routes.js";
 
-app.use(express.json());
 app.use("/api/admin", adminRoutes);
 
-// ========== AUTH ==========
+// ======= AUTH =======
 app.post("/api/auth/register", async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
@@ -93,7 +93,7 @@ app.post("/api/auth/register", async (req, res) => {
       },
     });
 
-    const { password: _, ...safeUser } = user;
+    const { password: _pw, ...safeUser } = user;
     res.status(201).json(safeUser);
   } catch (error) {
     console.error(error);
@@ -124,7 +124,7 @@ app.post("/api/auth/login", async (req, res) => {
       return res.status(401).json({ error: "Credenciales inválidas" });
     }
 
-    const { password: _, ...safeUser } = user;
+    const { password: _pw, ...safeUser } = user;
 
     const token = jwt.sign(safeUser, process.env.JWT_SECRET, {
       expiresIn: "1h",
@@ -137,7 +137,7 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
-// ========== USERS ==========
+// ======= USERS =======
 app.get("/api/users", authenticateToken, async (req, res) => {
   try {
     const users = await prisma.user.findMany({
@@ -169,7 +169,7 @@ app.put("/api/users/profile", authenticateToken, async (req, res) => {
       data: { name, email: newEmail, avatarUrl },
     });
 
-    const { password: _, ...safeUser } = updatedUser;
+    const { password: _pw, ...safeUser } = updatedUser;
 
     const token = jwt.sign(safeUser, process.env.JWT_SECRET, {
       expiresIn: "1h",
@@ -182,7 +182,7 @@ app.put("/api/users/profile", authenticateToken, async (req, res) => {
   }
 });
 
-// ========== TASKS ==========
+// ======= TASKS =======
 app.get("/api/tasks/all", authenticateToken, async (req, res) => {
   try {
     const tasks = await prisma.task.findMany({
@@ -278,12 +278,58 @@ app.delete("/api/tasks/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// ========== SPA fallback ==========
+// ======= MESSAGES (CAMINO 2) =======
+app.get("/api/messages", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const messages = await prisma.message.findMany({
+      where: {
+        OR: [{ to_user_id: userId }, { from_user_id: userId }],
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(messages);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al obtener mensajes" });
+  }
+});
+
+app.post("/api/messages", authenticateToken, async (req, res) => {
+  try {
+    const from_user_id = req.user.id;
+    const { to_user_id, content } = req.body;
+
+    if (!to_user_id || !content) {
+      return res.status(400).json({ error: "Faltan campos" });
+    }
+
+    const message = await prisma.message.create({
+      data: {
+        from_user_id,
+        to_user_id: Number(to_user_id),
+        content,
+      },
+    });
+
+    res.status(201).json(message);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al crear mensaje" });
+  }
+});
+
+// ======= Servir frontend (solo producción) =======
+app.use(express.static(path.join(__dirname, "../dist")));
+
+// ======= SPA fallback (debe ir AL FINAL) =======
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../dist/index.html"));
 });
 
-// ========== START ==========
+// ======= START =======
 const port = process.env.PORT || 3001;
 app.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
