@@ -25,14 +25,14 @@ const EventFormModal = ({ open, handleClose, onSave, slotInfo, initialData }) =>
   });
   const [errors, setErrors] = useState({});
 
-  const isEditing = Boolean(initialData);
+  const isEditing = Boolean(initialData?.id);
 
   useEffect(() => {
     if (open) {
-      if (isEditing) {
+      if (initialData) {
         setTaskData({
           title: initialData.title || '',
-          priority: initialData.resource.priority || 'media',
+          priority: initialData.priority || initialData.resource?.priority || 'media',
           startTime: initialData.start && !initialData.allDay ? moment(initialData.start).format('HH:mm') : '',
           endTime: initialData.end && !initialData.allDay ? moment(initialData.end).format('HH:mm') : '',
           dueDate: initialData.start ? moment(initialData.start).format('YYYY-MM-DD') : '',
@@ -48,7 +48,7 @@ const EventFormModal = ({ open, handleClose, onSave, slotInfo, initialData }) =>
       }
       setErrors({});
     }
-  }, [open, isEditing, initialData, slotInfo]);
+  }, [open, initialData, slotInfo]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
