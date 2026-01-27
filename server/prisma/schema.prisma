@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,19 +8,19 @@ datasource db {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  name      String
-  email     String    @unique
-  password  String
-  role      String    @default("user")
-  avatarUrl String?
-
-  tasks     Task[]
-  sentMessages Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id                   Int       @id @default(autoincrement())
+  name                 String
+  email                String    @unique
+  password             String
+  role                 String    @default("user")
+  avatarUrl            String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  passwordResetExpires DateTime?
+  passwordResetToken   String?
+  sentMessages         Message[] @relation("SentMessages")
+  receivedMessages     Message[] @relation("ReceivedMessages")
+  tasks                Task[]
 }
 
 model Task {
@@ -31,40 +28,36 @@ model Task {
   title       String
   description String?
   dueDate     DateTime?
-  startTime   DateTime?
-  endTime     DateTime?
   completed   Boolean   @default(false)
-  completedAt DateTime?
-  priority    Priority  @default(media)
-  
   userId      Int
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  priority    Priority  @default(media)
+  endTime     DateTime?
+  startTime   DateTime?
+  completedAt DateTime?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model Message {
+  id           Int      @id @default(autoincrement())
+  text         String
+  isRead       Boolean  @default(false)
+  from_user_id Int
+  to_user_id   Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  fromUser     User     @relation("SentMessages", fields: [from_user_id], references: [id], onDelete: Cascade)
+  toUser       User     @relation("ReceivedMessages", fields: [to_user_id], references: [id], onDelete: Cascade)
+
+  @@index([from_user_id])
+  @@index([to_user_id])
 }
 
 enum Priority {
   baja
   media
   alta
-}
-
-model Message {
-  id          Int      @id @default(autoincrement())
-  text        String
-  isRead      Boolean  @default(false)
-
-  from_user_id Int
-  to_user_id   Int
-  fromUser    User     @relation("SentMessages", fields: [from_user_id], references: [id], onDelete: Cascade)
-  toUser      User     @relation("ReceivedMessages", fields: [to_user_id], references: [id], onDelete: Cascade)
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  @@index([from_user_id])
-  @@index([to_user_id])
 }
