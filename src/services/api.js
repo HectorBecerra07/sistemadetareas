@@ -115,6 +115,9 @@ export const deleteAdminTask = (id) =>
 
 // ============ TASKS ============
 
+// ============ CALENDARIO GENERAL ============
+export const fetchAllCalendarTasks = () => apiFetch('/tasks/all');
+
 export const fetchTasks = () => apiFetch('/tasks');
 
 export const createTask = (task) =>
