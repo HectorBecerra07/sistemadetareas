@@ -17,6 +17,10 @@ const ClientFormModal = ({ open, onClose, onSave, client }) => {
     name: '',
     phone: '',
     vendingMachineModel: '',
+    address: '',
+    equipmentCost: '',
+    freightCost: '',
+    travelCost: '',
     status: 'potencial',
   });
 
@@ -26,6 +30,10 @@ const ClientFormModal = ({ open, onClose, onSave, client }) => {
         name: client.name || '',
         phone: client.phone || '',
         vendingMachineModel: client.vendingMachineModel || '',
+        address: client.address || '',
+        equipmentCost: client.equipmentCost || '',
+        freightCost: client.freightCost || '',
+        travelCost: client.travelCost || '',
         status: client.status || 'potencial',
       });
     } else {
@@ -34,6 +42,10 @@ const ClientFormModal = ({ open, onClose, onSave, client }) => {
         name: '',
         phone: '',
         vendingMachineModel: '',
+        address: '',
+        equipmentCost: '',
+        freightCost: '',
+        travelCost: '',
         status: 'potencial',
       });
     }
@@ -85,6 +97,49 @@ const ClientFormModal = ({ open, onClose, onSave, client }) => {
             variant="outlined"
             value={formData.vendingMachineModel}
             onChange={handleChange}
+          />
+          <TextField
+            margin="dense"
+            name="address"
+            label="Dirección"
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={formData.address}
+            onChange={handleChange}
+          />
+          <TextField
+            margin="dense"
+            name="equipmentCost"
+            label="Costo del Equipo"
+            type="number"
+            fullWidth
+            variant="outlined"
+            value={formData.equipmentCost}
+            onChange={handleChange}
+            InputProps={{ startAdornment: <span style={{ marginRight: '8px' }}>$</span> }}
+          />
+          <TextField
+            margin="dense"
+            name="freightCost"
+            label="Costo de Fletes"
+            type="number"
+            fullWidth
+            variant="outlined"
+            value={formData.freightCost}
+            onChange={handleChange}
+            InputProps={{ startAdornment: <span style={{ marginRight: '8px' }}>$</span> }}
+          />
+          <TextField
+            margin="dense"
+            name="travelCost"
+            label="Costo de Viáticos"
+            type="number"
+            fullWidth
+            variant="outlined"
+            value={formData.travelCost}
+            onChange={handleChange}
+            InputProps={{ startAdornment: <span style={{ marginRight: '8px' }}>$</span> }}
           />
           <FormControl fullWidth margin="dense">
             <InputLabel>Estatus</InputLabel>

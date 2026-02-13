@@ -28,13 +28,17 @@ router.get('/', async (req, res) => {
 
 // Create a new client
 router.post('/', async (req, res) => {
-  const { name, phone, vendingMachineModel, status, contactDate } = req.body;
+  const { name, phone, vendingMachineModel, status, contactDate, address, equipmentCost, freightCost, travelCost } = req.body;
   try {
     const newClient = await prisma.client.create({
       data: {
         name,
         phone,
         vendingMachineModel,
+        address,
+        equipmentCost: equipmentCost ? parseFloat(equipmentCost) : null,
+        freightCost: freightCost ? parseFloat(freightCost) : null,
+        travelCost: travelCost ? parseFloat(travelCost) : null,
         status,
         contactDate: contactDate ? new Date(contactDate) : new Date(),
         createdById: req.user.id,
@@ -50,7 +54,7 @@ router.post('/', async (req, res) => {
 // Update a client
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, phone, vendingMachineModel, status, contactDate } = req.body;
+  const { name, phone, vendingMachineModel, status, contactDate, address, equipmentCost, freightCost, travelCost } = req.body;
   try {
     // Ensure the client belongs to the user trying to update it
     const client = await prisma.client.findFirst({
@@ -67,6 +71,10 @@ router.put('/:id', async (req, res) => {
         name,
         phone,
         vendingMachineModel,
+        address,
+        equipmentCost: equipmentCost !== undefined ? parseFloat(equipmentCost) : undefined,
+        freightCost: freightCost !== undefined ? parseFloat(freightCost) : undefined,
+        travelCost: travelCost !== undefined ? parseFloat(travelCost) : undefined,
         status,
         contactDate: contactDate ? new Date(contactDate) : undefined,
       },

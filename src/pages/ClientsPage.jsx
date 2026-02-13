@@ -5,8 +5,10 @@ import ClientFormModal from '../components/ClientFormModal';
 import { Button, IconButton, Menu, MenuItem, CircularProgress, Box, Typography, Grid, Paper } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import PhoneIcon from '@mui/icons-material/Phone';
-import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer'; // Not used, but keeping for consistency with previous context.
 import StorefrontIcon from '@mui/icons-material/Storefront';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 
 const StatusBadge = ({ status }) => {
   const statusInfo = {
@@ -89,6 +91,22 @@ const ClientCard = ({ client, onEdit, onDelete }) => {
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
           <StorefrontIcon sx={{ mr: 1.5, color: 'text.secondary' }} fontSize="small" />
           <Typography variant="body2" color="text.primary">{client.vendingMachineModel || 'No especificado'}</Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+          <LocationOnIcon sx={{ mr: 1.5, color: 'text.secondary' }} fontSize="small" />
+          <Typography variant="body2" color="text.primary">{client.address || 'No especificada'}</Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+          <AttachMoneyIcon sx={{ mr: 1.5, color: 'text.secondary' }} fontSize="small" />
+          <Typography variant="body2" color="text.primary">Costo Equipo: {client.equipmentCost ? `$${client.equipmentCost.toFixed(2)}` : 'N/A'}</Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+          <AttachMoneyIcon sx={{ mr: 1.5, color: 'text.secondary' }} fontSize="small" />
+          <Typography variant="body2" color="text.primary">Costo Fletes: {client.freightCost ? `$${client.freightCost.toFixed(2)}` : 'N/A'}</Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+          <AttachMoneyIcon sx={{ mr: 1.5, color: 'text.secondary' }} fontSize="small" />
+          <Typography variant="body2" color="text.primary">Costo Viáticos: {client.travelCost ? `$${client.travelCost.toFixed(2)}` : 'N/A'}</Typography>
         </Box>
       </Box>
       

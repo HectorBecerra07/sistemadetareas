@@ -68,6 +68,10 @@ model Client {
   name                String
   phone               String?
   vendingMachineModel String?
+  address             String?
+  equipmentCost       Float?
+  freightCost         Float?
+  travelCost          Float?
   contactDate         DateTime     @default(now())
   status              ClientStatus @default(potencial)
   createdById         Int
