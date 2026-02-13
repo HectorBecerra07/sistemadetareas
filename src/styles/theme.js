@@ -10,6 +10,21 @@ const theme = createTheme({
     secondary: {
       main: '#4caf50', // A calming green
     },
+    success: {
+      main: '#2e7d32',
+      lighter: '#e8f5e9',
+      darker: '#1b5e20',
+    },
+    warning: {
+      main: '#ed6c02',
+      lighter: '#fff8e1',
+      darker: '#e65100',
+    },
+    error: {
+      main: '#d32f2f',
+      lighter: '#fdecea',
+      darker: '#b71c1c',
+    },
     background: {
       default: '#f5f5f5', // A light grey background
       paper: '#ffffff', // White for paper elements
