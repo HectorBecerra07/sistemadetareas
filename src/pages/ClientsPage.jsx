@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { fetchClients, deleteClient, createClient, updateClient } from '../services/api';
 import { format } from 'date-fns';
 import ClientFormModal from '../components/ClientFormModal';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal'; // Importar el nuevo modal
 import { Button, IconButton, Menu, MenuItem, CircularProgress, Box, Typography, Grid, Paper } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import PhoneIcon from '@mui/icons-material/Phone';
-import LocalOfferIcon from '@mui/icons-material/LocalOffer'; // Not used, but keeping for consistency with previous context.
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 
+// ... (StatusBadge component remains the same)
 const StatusBadge = ({ status }) => {
   const statusInfo = {
     potencial: { text: 'Potencial', color: 'success' },
@@ -41,6 +42,7 @@ const StatusBadge = ({ status }) => {
   );
 };
 
+
 const ClientCard = ({ client, onEdit, onDelete }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -59,13 +61,13 @@ const ClientCard = ({ client, onEdit, onDelete }) => {
   };
 
   const handleDelete = () => {
-    onDelete(client.id);
+    onDelete(client); // Pass the whole client object
     handleMenuClose();
   };
 
   return (
     <Paper elevation={2} sx={{ borderRadius: 4, p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+       <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
         <Box sx={{ flexGrow: 1 }}>
           <Typography variant="h6" component="h3" sx={{ fontWeight: 'bold' }}>
             {client.name}
@@ -92,7 +94,7 @@ const ClientCard = ({ client, onEdit, onDelete }) => {
           <StorefrontIcon sx={{ mr: 1.5, color: 'text.secondary' }} fontSize="small" />
           <Typography variant="body2" color="text.primary">{client.vendingMachineModel || 'No especificado'}</Typography>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
           <LocationOnIcon sx={{ mr: 1.5, color: 'text.secondary' }} fontSize="small" />
           <Typography variant="body2" color="text.primary">{client.address || 'No especificada'}</Typography>
         </Box>
@@ -117,12 +119,15 @@ const ClientCard = ({ client, onEdit, onDelete }) => {
   );
 };
 
+
 function ClientsPage() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [formModalOpen, setFormModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState(null);
 
   useEffect(() => {
     loadClients();
@@ -142,14 +147,24 @@ function ClientsPage() {
     }
   };
 
-  const handleOpenModal = (client = null) => {
+  const handleOpenFormModal = (client = null) => {
     setSelectedClient(client);
-    setModalOpen(true);
+    setFormModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setModalOpen(false);
+  const handleCloseFormModal = () => {
+    setFormModalOpen(false);
     setSelectedClient(null);
+  };
+
+  const handleOpenDeleteModal = (client) => {
+    setClientToDelete(client);
+    setDeleteModalOpen(true);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setDeleteModalOpen(false);
+    setClientToDelete(null);
   };
 
   const handleSaveClient = async (formData) => {
@@ -159,7 +174,7 @@ function ClientsPage() {
       } else {
         await createClient(formData);
       }
-      handleCloseModal();
+      handleCloseFormModal();
       loadClients();
     } catch (err) {
       console.error('Error saving client:', err);
@@ -167,15 +182,15 @@ function ClientsPage() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este cliente?')) {
-      try {
-        await deleteClient(id);
-        setClients(clients.filter((client) => client.id !== id));
-      } catch (err) {
-        console.error('Error deleting client:', err);
-        setError('No se pudo eliminar el cliente.');
-      }
+  const handleConfirmDelete = async () => {
+    if (!clientToDelete) return;
+    try {
+      await deleteClient(clientToDelete.id);
+      setClients(clients.filter((client) => client.id !== clientToDelete.id));
+      handleCloseDeleteModal();
+    } catch (err) {
+      console.error('Error deleting client:', err);
+      setError('No se pudo eliminar el cliente.');
     }
   };
 
@@ -190,7 +205,7 @@ function ClientsPage() {
             Gestiona la lista de todos tus clientes potenciales.
           </Typography>
         </Box>
-        <Button variant="contained" onClick={() => handleOpenModal()}>
+        <Button variant="contained" onClick={() => handleOpenFormModal()}>
           Añadir Cliente
         </Button>
       </Box>
@@ -211,7 +226,7 @@ function ClientsPage() {
             <Grid container spacing={3}>
               {clients.map((client) => (
                 <Grid item xs={12} sm={6} md={4} key={client.id}>
-                  <ClientCard client={client} onEdit={handleOpenModal} onDelete={handleDelete} />
+                  <ClientCard client={client} onEdit={handleOpenFormModal} onDelete={handleOpenDeleteModal} />
                 </Grid>
               ))}
             </Grid>
@@ -220,7 +235,7 @@ function ClientsPage() {
               <Typography variant="h6" color="text.secondary" gutterBottom>
                 No se encontraron clientes.
               </Typography>
-              <Button variant="contained" onClick={() => handleOpenModal()} sx={{ mt: 2 }}>
+              <Button variant="contained" onClick={() => handleOpenFormModal()} sx={{ mt: 2 }}>
                 Crear primer cliente
               </Button>
             </Box>
@@ -229,10 +244,17 @@ function ClientsPage() {
       )}
 
       <ClientFormModal
-        open={modalOpen}
-        onClose={handleCloseModal}
+        open={formModalOpen}
+        onClose={handleCloseFormModal}
         onSave={handleSaveClient}
         client={selectedClient}
+      />
+      <ConfirmDeleteModal
+        open={deleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        title="Confirmar Eliminación"
+        message={`¿Estás seguro de que deseas eliminar al cliente "${clientToDelete?.name}"? Esta acción no se puede deshacer.`}
       />
     </Box>
   );
