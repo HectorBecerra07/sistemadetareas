@@ -41,7 +41,7 @@ router.post('/', async (req, res) => {
       },
     });
     res.status(201).json(newClient);
-  } catch (error)_ {
+  } catch (error) {
     console.error('Error creating client:', error);
     res.status(500).json({ message: 'Error creating client' });
   }
