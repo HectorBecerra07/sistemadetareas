@@ -39,6 +39,7 @@ const Sidebar = ({ drawerWidth, mobileOpen, handleDrawerToggle }) => {
     { text: 'Calendario General', icon: <GroupIcon />, path: '/calendar/general' },
     { text: 'Mensajes', icon: <MailIcon />, path: '/messages' },
     { text: 'Perfil', icon: <AccountCircleIcon />, path: '/profile' },
+    { text: 'Clientes', icon: <GroupIcon />, path: '/clients' },
   ];
 
   const adminNavItems = isAdmin

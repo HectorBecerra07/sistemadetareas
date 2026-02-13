@@ -62,8 +62,10 @@ app.options("*", cors(corsOptions));
 // ======= Auth middleware + routes =======
 import { authenticateToken } from "./middleware/auth.js";
 import adminRoutes from "./routes/admin.routes.js";
+import clientRoutes from "./routes/client.routes.js";
 
 app.use("/api/admin", adminRoutes);
+app.use("/api/clients", clientRoutes);
 
 // ======= AUTH =======
 app.post("/api/auth/register", async (req, res) => {

@@ -134,3 +134,23 @@ export const createMessage = (message) =>
     method: "POST",
     body: JSON.stringify(message),
   });
+
+// ============ CLIENTS ============
+export const fetchClients = () => apiFetch("/clients");
+
+export const createClient = (clientData) =>
+  apiFetch("/clients", {
+    method: "POST",
+    body: JSON.stringify(clientData),
+  });
+
+export const updateClient = (id, clientData) =>
+  apiFetch(`/clients/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(clientData),
+  });
+
+export const deleteClient = (id) =>
+  apiFetch(`/clients/${id}`, {
+    method: "DELETE",
+  });

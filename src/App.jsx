@@ -12,6 +12,7 @@ import LoginPage from './pages/LoginPage';
 import AdminTasksPage from './pages/AdminTasksPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminUsersPage from './pages/AdminUsersPage';
+import ClientsPage from './pages/ClientsPage'; // Importar la nueva página
 import { useUser } from './context/UserContext';
 
 const ProtectedRoutes = () => {
@@ -53,6 +54,7 @@ const App = () => {
           <Route path="/calendar/general" element={<GeneralCalendarPage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/clients" element={<ClientsPage />} />
           
           <Route element={<AdminRoutes />}>
             <Route path="/admin/tasks" element={<AdminTasksPage />} />
