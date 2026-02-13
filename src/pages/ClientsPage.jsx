@@ -6,7 +6,7 @@ import { Button, IconButton, Menu, MenuItem, CircularProgress, Box, Typography, 
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import PhoneIcon from '@mui/icons-material/Phone';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
-import VendingMachineIcon from '@mui/icons-material/VendingMachine';
+import StorefrontIcon from '@mui/icons-material/Storefront';
 
 const StatusBadge = ({ status }) => {
   const statusInfo = {
@@ -87,7 +87,7 @@ const ClientCard = ({ client, onEdit, onDelete }) => {
           <Typography variant="body2" color="text.primary">{client.phone || 'No disponible'}</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-          <VendingMachineIcon sx={{ mr: 1.5, color: 'text.secondary' }} fontSize="small" />
+          <StorefrontIcon sx={{ mr: 1.5, color: 'text.secondary' }} fontSize="small" />
           <Typography variant="body2" color="text.primary">{client.vendingMachineModel || 'No especificado'}</Typography>
         </Box>
       </Box>
